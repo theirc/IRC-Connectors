@@ -40,7 +40,20 @@ module.exports = {
 						let message = entry.value.message;
 						let comment_id = entry.value.comment_id;
 
-                        console.log(entry.value.message);
+						// Converting from Arabic / Farsi numerals to 'murican numbers
+						message = message
+							.replace(/٠/g, 0)
+							.replace(/١/g, 1)
+							.replace(/٢/g, 2)
+							.replace(/٣/g, 3)
+							.replace(/٤/g, 4)
+							.replace(/٥/g, 5)
+							.replace(/٦/g, 6)
+							.replace(/٧/g, 7)
+							.replace(/٨/g, 8)
+							.replace(/٩/g, 9);
+
+						console.log(entry.value.message);
 						let hasNumbers =
 							REGEX.test(message) || EREGEX.test(message);
 						let isActuallyALink =
