@@ -30,6 +30,8 @@
   "dependencies": {
     "body-parser": "^1.18.2",
     "compression": "^1.7.1",
+    "contentful": "^5.0.1",
+    "contentful-management": "^4.0.1",
     "cors": "^2.8.4",
     "fb": "^2.0.0",
     "feathers": "^2.2.3",
