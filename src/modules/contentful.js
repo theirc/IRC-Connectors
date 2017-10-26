@@ -6,7 +6,13 @@ const _ = require("lodash");
 const mgmtClient = contentfulManagement.createClient({
 	accessToken: CONTENTFUL_API_TOKEN,
 });
+const promiseSerial = funcs => funcs.reduce((promise, func) => promise.then(result => func().then(Array.prototype.concat.bind(result))), Promise.resolve([]));
 
+/**
+ *
+ *  
+ * 
+ */
 module.exports = function(req, res) {
 	switch (req.headers["x-contentful-topic"]) {
 		case "ContentManagement.Entry.publish":
@@ -14,12 +20,8 @@ module.exports = function(req, res) {
 			mgmtClient.getSpace(spaceId).then(space => {
 				switch (req.body.sys.contentType.sys.id) {
 					case "article":
-						//console.log(req.body.fields.slug["en-US"]);
-
 						break;
 					case "category":
-						//console.log(req.body.fields.slug["en-US"]);
-
 						space.getApiKeys().then(k => {
 							client = contentful.createClient({
 								space: spaceId,
@@ -41,8 +43,6 @@ module.exports = function(req, res) {
 
 						break;
 					case "country":
-						console.log(req.body.fields.slug["en-US"]);
-						/* */
 						space.getApiKeys().then(k => {
 							client = contentful.createClient({
 								space: spaceId,
@@ -76,15 +76,15 @@ module.exports = function(req, res) {
 	res.sendStatus(200);
 };
 
-const promiseSerial = funcs => funcs.reduce((promise, func) => promise.then(result => func().then(Array.prototype.concat.bind(result))), Promise.resolve([]));
-
 function fixCategory(space, category, country) {
-	let promises = _.sortBy(category.fields.articles || [], a => a.sys.updatedAt).map(article => () => {
+	var articles = (category.fields.articles || []).concat([category.fields.overview]).filter(_.identity);
+	let promises = _.sortBy(articles, a => a.sys.updatedAt).map(article => () => {
 		const promise = new Promise((res, rej) => {
 			console.log(article.sys.updatedAt);
 			space.getEntry(article.sys.id).then(cArticle => {
-				Promise.all([
-					space.getEntry(category.sys.id).then(cCategory => {
+				space
+					.getEntry(category.sys.id)
+					.then(cCategory => {
 						cArticle.fields.category = {
 							"en-US": {
 								sys: {
@@ -94,26 +94,34 @@ function fixCategory(space, category, country) {
 								},
 							},
 						};
-					}),
-					!country ||
-						space.getEntry(country.sys.id).then(cCountry => {
-							cArticle.fields.country = {
-								"en-US": {
-									sys: {
-										type: "Link",
-										linkType: "Entry",
-										id: cCountry.sys.id,
+					})
+					.then(c => {
+						if (country) {
+							space.getEntry(country.sys.id).then(cCountry => {
+								cArticle.fields.country = {
+									"en-US": {
+										sys: {
+											type: "Link",
+											linkType: "Entry",
+											id: cCountry.sys.id,
+										},
 									},
-								},
-							};
-						}),
-				]).then(c => {
-					cArticle
-						.update()
-						.then(cc => cc.publish())
-						.then(() => res())
-						.catch(c => console.log(c) && rej());
-				});
+								};
+
+								cArticle
+									.update()
+									.then(cc => cc.publish())
+									.then(() => res())
+									.catch(c => console.log(c) && rej());
+							});
+						} else {
+							cArticle
+								.update()
+								.then(cc => cc.publish())
+								.then(() => res())
+								.catch(c => console.log(c) && rej());
+						}
+					});
 			});
 		});
 
