@@ -1,13 +1,42 @@
-const CONTENTFUL_API_TOKEN = process.env.CONTENTFUL_API_TOKEN;
-
 const contentfulManagement = require("contentful-management");
 const contentful = require("contentful");
 const _ = require("lodash");
+const { promiseSerial, reverseMap } = require("./utils");
+const Remarkable = require("remarkable");
+const cheerio = require("cheerio");
+const request = require("request");
+
+const md = new Remarkable("full", {
+	html: true,
+	linkify: true,
+	typographer: true,
+	breaks: true,
+});
+
+const TRANSIFEX_API_KEY = process.env.TRANSIFEX_API_KEY;
+const CONTENTFUL_API_TOKEN = process.env.CONTENTFUL_API_TOKEN;
+let { transifexToSpaceDictionary, contenfulLanguageDictionary, contentfulPrimaryLanguage } = require("../config");
+
 const mgmtClient = contentfulManagement.createClient({
 	accessToken: CONTENTFUL_API_TOKEN,
 });
-const promiseSerial = funcs => funcs.reduce((promise, func) => promise.then(result => func().then(Array.prototype.concat.bind(result))), Promise.resolve([]));
+transifexToSpaceDictionary = reverseMap(transifexToSpaceDictionary);
+contenfulLanguageDictionary = reverseMap(contenfulLanguageDictionary);
 
+function generateContentForTransifex(article) {
+	let { lead, title, content } = article.fields;
+	lead = md.render(lead);
+	content = md.render(content);
+
+	let body = `<html><body><div class="title">${title}</div><div class="subtitle">${lead}</div>${content}</body></html>`;
+	let $ = cheerio.load(body);
+
+	/*
+	Placeholder for Rey's Magic
+	*/
+
+	return $.html();
+}
 /**
  *
  *  
@@ -20,6 +49,63 @@ module.exports = function(req, res) {
 			mgmtClient.getSpace(spaceId).then(space => {
 				switch (req.body.sys.contentType.sys.id) {
 					case "article":
+						/*
+					Uploading content to transifex
+					*/
+						let locale = contentfulPrimaryLanguage[spaceId] ? contenfulLanguageDictionary[contentfulPrimaryLanguage[spaceId]] : "en";
+						let project = transifexToSpaceDictionary[spaceId];
+						space.getApiKeys().then(k => {
+							client = contentful.createClient({
+								space: spaceId,
+								accessToken: k.items[0].accessToken,
+								locale: locale,
+							});
+							client.getEntry(req.body.sys.id).then(e => {
+								let content = generateContentForTransifex(e);
+								let { slug, title } = e.fields;
+								console.log(e.fields.slug, content.length);
+
+								let payload = {
+									slug,
+									content,
+									name: title,
+									i18n_type: "XHTML",
+									accept_translations: "true",
+								};
+
+								request
+									.get(`https://www.transifex.com/api/2/project/${project}/resource/${slug}/`, (__e, r, __b) => {
+										let method = r.statusCode === 404 ? "POST" : "PUT";
+										let uri =
+											r.statusCode === 404
+												? `https://www.transifex.com/api/2/project/${project}/resources/`
+												: `https://www.transifex.com/api/2/project/${project}/resource/${slug}/content/`;
+										request(
+											{
+												method,
+												uri,
+												auth: {
+													user: "api",
+													pass: TRANSIFEX_API_KEY,
+													sendImmediately: true,
+												},
+												headers: {
+													ContentType: "application/json",
+												},
+												json: true,
+												body: payload,
+											},
+											(e1, r1, b1) => {
+												if (e1) {
+													console.log(e1);
+												}
+												console.log(b1);
+											}
+										);
+									})
+									.auth("api", TRANSIFEX_API_KEY, false);
+							});
+						});
 						break;
 					case "category":
 						space.getApiKeys().then(k => {

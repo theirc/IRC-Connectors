@@ -25,10 +25,12 @@
     "test": "npm run eslint && npm run mocha",
     "eslint": "eslint src/. test/. --config .eslintrc.json",
     "start": "node src/",
-    "mocha": "mocha test/ --recursive --exit"
+    "mocha": "mocha test/ --recursive --exit",
+    "debug": "nodemon -x \"npm run start\" -w src/"
   },
   "dependencies": {
     "body-parser": "^1.18.2",
+    "cheerio": "^1.0.0-rc.2",
     "compression": "^1.7.1",
     "contentful": "^5.0.1",
     "contentful-management": "^4.0.1",
@@ -42,7 +44,9 @@
     "feathers-rest": "^1.8.0",
     "helmet": "^3.9.0",
     "lodash": "^4.17.4",
+    "remarkable": "^1.7.1",
     "serve-favicon": "^2.4.5",
+    "to-markdown": "^3.1.0",
     "winston": "^2.4.0"
   },
   "devDependencies": {
