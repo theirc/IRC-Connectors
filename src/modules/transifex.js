@@ -67,14 +67,14 @@ function transformIncomingText(content) {
 	};
 }
 
-function updateContentful(spaceId, slug, language, payload) {
+function updateContentful(spaceId, slug, language, payload, contentType) {
 	return client
 		.getSpace(spaceId)
 		.then(s =>
 			s
 				.getEntries({
 					"fields.slug": slug,
-					content_type: "article",
+					content_type: contentType,
 				})
 				.then(es => es.total > 0 && s.getEntry(es.items[0].sys.id))
 				.then(e => ({
@@ -83,17 +83,18 @@ function updateContentful(spaceId, slug, language, payload) {
 				}))
 		)
 		.then(({ entry, space }) => {
-			const contentfulLanguage = contenfulLanguageDictionary[language];
-			Object.keys(payload).forEach(k => {
-				let field = entry.fields[k] || { [contentfulLanguage]: "" };
+			if (entry) {
+				const contentfulLanguage = contenfulLanguageDictionary[language];
+				Object.keys(payload).forEach(k => {
+					let field = entry.fields[k] || { [contentfulLanguage]: "" };
 
-				field[contentfulLanguage] = payload[k];
-			});
+					field[contentfulLanguage] = payload[k];
+				});
 
-			// Save and pubish
-			entry.update().then(e => e.publish());
-		})
-		.catch(() => null);
+				// Save and pubish
+				return entry.update(); //.then(e => e.publish());
+			}
+		});
 }
 
 module.exports = function(req, res) {
@@ -116,8 +117,16 @@ module.exports = function(req, res) {
 				let spaceId = transifexToSpaceDictionary[project];
 				let payload = transformIncomingText(t.content);
 				let slug = resource.replace(/html$/, "");
+				let contentType = "article";
 
-				updateContentful(spaceId, slug, language, payload).then(p => {});
+				if (slug.indexOf("---") > 0) {
+					const slugParts = slug.split("---");
+
+					slug = slugParts[1];
+					contentType = slugParts[0];
+				}
+
+				updateContentful(spaceId, slug, language, payload, contentType).then(p => {});
 			});
 			break;
 
