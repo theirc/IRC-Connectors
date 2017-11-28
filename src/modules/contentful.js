@@ -143,7 +143,7 @@ function uploadCategoriesToTransifex(client, spaceId) {
 	client.getEntries({ limit: 1e3, content_type: "category", locale: locale }).then(e => {
 		let categoryNames = e.items
 			.map(category => [category.fields.slug, category.fields.name])
-			.concat(e.items.map(category => [category.fields.slug + "--description", category.fields.description]));
+			.concat(e.items.map(category => [category.fields.slug + "---description", category.fields.description]));
 		let categoryDictionary = _.fromPairs(categoryNames);
 		console.log(categoryDictionary);
 		let slug = "category-names";

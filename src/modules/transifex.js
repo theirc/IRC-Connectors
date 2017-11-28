@@ -1,5 +1,6 @@
 const crypto = require("crypto");
 const Promise = require("bluebird");
+const _ = require("lodash");
 const request = require("request");
 const cheerio = require("cheerio");
 const contentful = require("contentful-management");
@@ -115,18 +116,58 @@ module.exports = function(req, res) {
 		case "translation_completed":
 			resourceTranslationRequest(project, resource, language).then(t => {
 				let spaceId = transifexToSpaceDictionary[project];
-				let payload = transformIncomingText(t.content);
 				let slug = resource.replace(/html$/, "");
-				let contentType = "article";
+				console.log(slug);
+				if (slug === "category-names") {
+					let payload = JSON.parse(t.content);
+					Promise.all(
+						Object.keys(payload)
+							.filter(k => k.indexOf("---description") === -1)
+							.map(k => {
+								console.log(k);
+								let updatePayload = {
+									name: payload[k],
+									description: payload[k + "---description"],
+								};
 
-				if (slug.indexOf("---") > 0) {
-					const slugParts = slug.split("---");
+								return client
+									.getSpace(spaceId)
+									.then(s =>
+										s
+											.getEntries({ "fields.slug": k, content_type: "category" })
+											.then(es => es.total > 0 && s.getEntry(es.items[0].sys.id))
+											.then(e => ({
+												entry: e,
+												space: s,
+											}))
+									)
+									.then(({ entry, space }) => {
+										if (entry) {
+											const contentfulLanguage = contenfulLanguageDictionary[language];
+											Object.keys(updatePayload).forEach(uk => {
+												let field = entry.fields[uk] || { [contentfulLanguage]: "" };
 
-					slug = slugParts[1];
-					contentType = slugParts[0];
+												field[contentfulLanguage] = updatePayload[uk];
+											});
+
+											// Save and pubish
+											return entry.update(); //.then(e => e.publish());
+										}
+									});
+							})
+					).then(() => console.log("Success"));
+				} else {
+					let payload = transformIncomingText(t.content);
+					let contentType = "article";
+					if (slug.indexOf("---") > 0) {
+						const slugParts = slug.split("---");
+
+						slug = slugParts[1];
+						contentType = slugParts[0];
+					}
+
+					updateContentful(spaceId, slug, language, payload, contentType).then(p => {});
 				}
-
-				updateContentful(spaceId, slug, language, payload, contentType).then(p => {});
 			});
 			break;
 
