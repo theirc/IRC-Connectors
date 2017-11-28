@@ -31,6 +31,11 @@ function generateContentForTransifex(article) {
 	let body = `<html><body><div class="title">${title}</div><div class="subtitle">${lead}</div>${content}</body></html>`;
 	let $ = cheerio.load(body);
 
+	$("hr").each((i, e) => {
+		let $e = $(e);
+		$e.replaceWith($('<div class="hr">---</div>'));
+	});
+
 	/*
 	Placeholder for Rey's Magic
 	*/

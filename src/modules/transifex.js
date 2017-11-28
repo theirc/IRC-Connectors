@@ -28,7 +28,8 @@ function resourceTranslationRequest(project, key, l) {
 					resolve(JSON.parse(b));
 				} catch (e) {
 					//reject(e);
-					resolve(null);
+					console.log("Error", b);
+					reject(null);
 				}
 			})
 			.auth("api", TRANSIFEX_API_KEY, false);
@@ -59,7 +60,11 @@ function transformIncomingText(content) {
 	const subtitle = $(".subtitle").remove();
 	const hero = $("img", subtitle).remove();
 
-	const parsedContent = toMarkdown($.html());
+	$(".hr").each((i, e) => {
+		let $e = $(e);
+	});
+
+	const parsedContent = toMarkdown($.html()).replace(/<div class="hr">---<\/div>/gi, "---");
 
 	return {
 		title: title.text() ? title.text() : null,
@@ -93,6 +98,7 @@ function updateContentful(spaceId, slug, language, payload, contentType) {
 				});
 
 				// Save and pubish
+				console.log("Updating", language, slug);
 				return entry.update(); //.then(e => e.publish());
 			}
 		});
