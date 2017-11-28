@@ -3,6 +3,7 @@ const _ = require("lodash");
 function cleanUpHTML(h) {
 	return h
 		.replace(/&#xA0;/g, "&nbsp;")
+		.replace(/&nbsp;/g, " ")
 		.replace(/&#x([0-9ABCDEFabcdef]+);/g, function(match, dec) {
 			return String.fromCharCode(parseInt(`0x${dec}`, 16));
 		})

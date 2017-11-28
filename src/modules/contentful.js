@@ -1,7 +1,7 @@
 const contentfulManagement = require("contentful-management");
 const contentful = require("contentful");
 const _ = require("lodash");
-const { promiseSerial, reverseMap } = require("./utils");
+const { promiseSerial, reverseMap, cleanUpHTML } = require("./utils");
 const Remarkable = require("remarkable");
 const cheerio = require("cheerio");
 const request = require("request");
@@ -35,12 +35,189 @@ function generateContentForTransifex(article) {
 	Placeholder for Rey's Magic
 	*/
 
-	return $.html();
+	return $.xml();
 }
+
+function importArticleAndVideo(req, space) {
+	const { body } = req;
+	const spaceId = body.sys.space.sys.id;
+	let locale = contentfulPrimaryLanguage[spaceId] ? contenfulLanguageDictionary[contentfulPrimaryLanguage[spaceId]] : "en";
+	let project = transifexToSpaceDictionary[spaceId];
+
+	space.getApiKeys().then(k => {
+		console.log("Uploading " + body.fields.slug["en-US"] + " to Transifex");
+		client = contentful.createClient({
+			space: spaceId,
+			accessToken: k.items[0].accessToken,
+			locale: locale,
+		});
+		client.getEntries({ "sys.id": body.sys.id, content_type: body.sys.contentType.sys.id }).then(e => {
+			const item = _.first(e.items);
+			let content = generateContentForTransifex(item);
+			let { slug, title } = item.fields;
+
+			if (item.sys.contentType.sys.id === "video") {
+				slug = "video---" + slug;
+			}
+
+			let payload = {
+				slug,
+				content: cleanUpHTML(content),
+				name: title,
+				i18n_type: "XHTML",
+				accept_translations: "true",
+			};
+
+			let promise = new Promise((resolve, reject) => {
+				request
+					.get(`https://www.transifex.com/api/2/project/${project}/resource/${slug}/`, (__e, r, __b) => {
+						let method = r.statusCode === 404 ? "POST" : "PUT";
+						let uri =
+							r.statusCode === 404 ? `https://www.transifex.com/api/2/project/${project}/resources/` : `https://www.transifex.com/api/2/project/${project}/resource/${slug}/content/`;
+
+						request(
+							{
+								method,
+								uri,
+								auth: {
+									user: "api",
+									pass: TRANSIFEX_API_KEY,
+									sendImmediately: true,
+								},
+								headers: {
+									ContentType: "application/json",
+								},
+								json: true,
+								body: payload,
+							},
+							(e1, r1, b1) => {
+								if (e1) {
+									reject(e1);
+								}
+								let updatePayload = {
+									slug: payload.slug,
+									name: payload.name,
+									categories: item.fields.country && item.fields.country.fields && item.fields.country.fields.slug ? [item.fields.country.fields.slug] : null,
+								};
+
+								request(
+									{
+										method: "PUT",
+										uri: `https://www.transifex.com/api/2/project/${project}/resource/${slug}/`,
+										auth: {
+											user: "api",
+											pass: TRANSIFEX_API_KEY,
+											sendImmediately: true,
+										},
+										headers: {
+											ContentType: "application/json",
+										},
+										json: true,
+										body: updatePayload,
+									},
+									(e, r, b) => {
+										if (e) {
+											reject(e);
+										}
+										resolve(b1);
+									}
+								);
+							}
+						);
+					})
+					.auth("api", TRANSIFEX_API_KEY, false);
+			});
+
+			promise
+				.then(() => {
+					console.log("Success");
+				})
+				.catch(e => console.log("Error", e));
+		});
+	});
+}
+
+function uploadCategoriesToTransifex(client, spaceId) {
+	let locale = contentfulPrimaryLanguage[spaceId] ? contenfulLanguageDictionary[contentfulPrimaryLanguage[spaceId]] : "en";
+	let project = transifexToSpaceDictionary[spaceId];
+	client.getEntries({ limit: 1e3, content_type: "category", locale: locale }).then(e => {
+		let categoryNames = e.items
+			.map(category => [category.fields.slug, category.fields.name])
+			.concat(e.items.map(category => [category.fields.slug + "--description", category.fields.description]));
+		let categoryDictionary = _.fromPairs(categoryNames);
+		console.log(categoryDictionary);
+		let slug = "category-names";
+
+		let payload = {
+			slug,
+			content: JSON.stringify(categoryDictionary),
+			name: "Category Names And Descriptions",
+			i18n_type: "KEYVALUEJSON",
+			accept_translations: "true",
+		};
+
+		request
+			.get(`https://www.transifex.com/api/2/project/${project}/resource/${slug}/`, (__e, r, __b) => {
+				let method = r.statusCode === 404 ? "POST" : "PUT";
+				let uri = r.statusCode === 404 ? `https://www.transifex.com/api/2/project/${project}/resources/` : `https://www.transifex.com/api/2/project/${project}/resource/${slug}/content/`;
+				console.log(r.statusCode, method, uri);
+				request(
+					{
+						method,
+						uri,
+						auth: {
+							user: "api",
+							pass: TRANSIFEX_API_KEY,
+							sendImmediately: true,
+						},
+						headers: {
+							ContentType: "application/json",
+						},
+						json: true,
+						body: payload,
+					},
+					(e1, r1, b1) => {
+						if (e1) {
+							console.log(e1);
+						}
+						console.log(b1);
+
+						let updatePayload = {
+							slug: payload.slug,
+							name: payload.name,
+						};
+
+						request(
+							{
+								method: "PUT",
+								uri: `https://www.transifex.com/api/2/project/${project}/resource/${slug}/`,
+								auth: {
+									user: "api",
+									pass: TRANSIFEX_API_KEY,
+									sendImmediately: true,
+								},
+								headers: {
+									ContentType: "application/json",
+								},
+								json: true,
+								body: updatePayload,
+							},
+							(e, r, b) => {
+								console.log(b);
+							}
+						);
+					}
+				);
+			})
+
+			.auth("api", TRANSIFEX_API_KEY, false);
+	});
+}
+
 /**
  *
- *  
- * 
+ *
+ *
  */
 module.exports = function(req, res) {
 	switch (req.headers["x-contentful-topic"]) {
@@ -49,63 +226,11 @@ module.exports = function(req, res) {
 			mgmtClient.getSpace(spaceId).then(space => {
 				switch (req.body.sys.contentType.sys.id) {
 					case "article":
+					case "video":
 						/*
-					Uploading content to transifex
-					*/
-						let locale = contentfulPrimaryLanguage[spaceId] ? contenfulLanguageDictionary[contentfulPrimaryLanguage[spaceId]] : "en";
-						let project = transifexToSpaceDictionary[spaceId];
-						space.getApiKeys().then(k => {
-							client = contentful.createClient({
-								space: spaceId,
-								accessToken: k.items[0].accessToken,
-								locale: locale,
-							});
-							client.getEntry(req.body.sys.id).then(e => {
-								let content = generateContentForTransifex(e);
-								let { slug, title } = e.fields;
-								console.log(e.fields.slug, content.length);
-
-								let payload = {
-									slug,
-									content,
-									name: title,
-									i18n_type: "XHTML",
-									accept_translations: "true",
-								};
-
-								request
-									.get(`https://www.transifex.com/api/2/project/${project}/resource/${slug}/`, (__e, r, __b) => {
-										let method = r.statusCode === 404 ? "POST" : "PUT";
-										let uri =
-											r.statusCode === 404
-												? `https://www.transifex.com/api/2/project/${project}/resources/`
-												: `https://www.transifex.com/api/2/project/${project}/resource/${slug}/content/`;
-										request(
-											{
-												method,
-												uri,
-												auth: {
-													user: "api",
-													pass: TRANSIFEX_API_KEY,
-													sendImmediately: true,
-												},
-												headers: {
-													ContentType: "application/json",
-												},
-												json: true,
-												body: payload,
-											},
-											(e1, r1, b1) => {
-												if (e1) {
-													console.log(e1);
-												}
-												console.log(b1);
-											}
-										);
-									})
-									.auth("api", TRANSIFEX_API_KEY, false);
-							});
-						});
+						Uploading content to transifex
+						*/
+						importArticleAndVideo(req, space);
 						break;
 					case "category":
 						space.getApiKeys().then(k => {
@@ -121,9 +246,11 @@ module.exports = function(req, res) {
 									limit: 1000,
 								})
 								.then(e => {
-									let categories = _.flattenDeep(e.items.map(c1 => [c1, Array.from(c1.fields.categories || [])])).filter(_.identity);
+									let categories = _.flattenDeep(e.items.filter(c1 => c1 && c1.fields).map(c1 => [c1, Array.from(c1.fields.categories || [])])).filter(_.identity);
 									let promises = categories.map(category => () => fixCategory(space, category).then(c => console.log(category.fields.slug)));
-									promiseSerial(promises).then(c => console.log("Complete"));
+									promiseSerial(promises)
+										.then(() => uploadCategoriesToTransifex(client, spaceId))
+										.then(c => console.log("Complete"));
 								});
 						});
 
@@ -142,11 +269,12 @@ module.exports = function(req, res) {
 									limit: 1000,
 								})
 								.then(e => {
-									for (let country of e.items) {
-										let categories = _.flattenDeep(country.fields.categories.map(c1 => [c1, Array.from(c1.fields.categories || [])])).filter(_.identity);
-										let promises = categories.map(category => () => fixCategory(space, category, country).then(c => console.log(category.fields.slug)));
-										promiseSerial(promises).then(c => console.log("Complete"));
-									}
+									let country = _.first(e.items);
+									let categories = _.flattenDeep(country.fields.categories.filter(c1 => c1 && c1.fields).map(c1 => [c1, Array.from(c1.fields.categories || [])])).filter(_.identity);
+									let promises = categories.map(category => () => fixCategory(space, category, country).then(c => console.log(category.fields.slug)));
+									promiseSerial(promises)
+										.then(() => uploadCategoriesToTransifex(client, spaceId))
+										.then(c => console.log("Complete"));
 								});
 						});
 
