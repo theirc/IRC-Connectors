@@ -29,6 +29,7 @@
     "debug": "nodemon -x \"npm run start\" -w src/"
   },
   "dependencies": {
+    "bluebird": "^3.5.1",
     "body-parser": "^1.18.2",
     "cheerio": "^1.0.0-rc.2",
     "compression": "^1.7.1",
