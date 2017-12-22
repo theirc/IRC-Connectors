@@ -90,7 +90,7 @@ function updateContentful(spaceId, slug, language, payload, contentType) {
 		)
 		.then(({ entry, space }) => {
 			if (entry) {
-				const contentfulLanguage = contenfulLanguageDictionary[language];
+				const contentfulLanguage = contenfulLanguageDictionary[language] || language;
 				Object.keys(payload).forEach(k => {
 					let field = entry.fields[k] || { [contentfulLanguage]: "" };
 
@@ -149,7 +149,7 @@ module.exports = function(req, res) {
 									)
 									.then(({ entry, space }) => {
 										if (entry) {
-											const contentfulLanguage = contenfulLanguageDictionary[language];
+											const contentfulLanguage = contenfulLanguageDictionary[language] || language;
 											Object.keys(updatePayload).forEach(uk => {
 												let field = entry.fields[uk] || { [contentfulLanguage]: "" };
 
