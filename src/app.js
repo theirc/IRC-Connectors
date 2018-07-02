@@ -28,6 +28,7 @@ app.use(helmet());
 app.use(compress());
 app.use(
 	bodyParser.json({
+		limit: '10000kb',
 		type: [
 			"*/json",
 			"*/javascript",
