@@ -69,49 +69,97 @@ function importArticleAndVideo(req, space) {
     let locale = contentfulPrimaryLanguage[spaceId] ? contenfulLanguageDictionary[contentfulPrimaryLanguage[spaceId]] : "en";
     let project = transifexToSpaceDictionary[spaceId];
 
-    space.getApiKeys().then(k => {
-        console.log("Uploading " + body.fields.slug["en-US"] + " to Transifex");
-        var accessToken = process.env.CONTENTFUL_CONTENT_TOKEN || k.items[0].accessToken
-        var host = process.env.CONTENTFUL_CONTENT_HOST;
-        client = contentful.createClient({
-            space: spaceId,
-            accessToken: accessToken,
-            host: host,
-            locale: locale,
-        });
-        client.getEntries({
-            "sys.id": body.sys.id,
-            content_type: body.sys.contentType.sys.id
-        }).then(e => {
-            const item = _.first(e.items);
-            let content = generateContentForTransifex(item);
-            let {
-                slug,
-                title
-            } = item.fields;
+    // space.getApiKeys().then(k => {
+    //     console.log("Uploading " + body.fields.slug["en-US"] + " to Transifex");
+    var accessToken = process.env.CONTENTFUL_CONTENT_TOKEN;// || k.items[0].accessToken
+    var host = process.env.CONTENTFUL_CONTENT_HOST;
+    client = contentful.createClient({
+        space: spaceId,
+        accessToken: accessToken,
+        host: host,
+        locale: locale,
+    });
+    client.getEntries({
+        "sys.id": body.sys.id,
+        content_type: body.sys.contentType.sys.id
+    }).then(e => {
+        const item = _.first(e.items);
+        let content = generateContentForTransifex(item);
+        let {
+            slug,
+            title
+        } = item.fields;
 
-            if (item.sys.contentType.sys.id === "video") {
-                slug = "video---" + slug;
-            }
+        if (item.sys.contentType.sys.id === "video") {
+            slug = "video---" + slug;
+        }
 
-            let payload = {
-                slug,
-                content: unicodeEscape(content),
-                name: title,
-                i18n_type: "XHTML",
-                accept_translations: "true",
-            };
+        let payload = {
+            slug,
+            content: unicodeEscape(content),
+            name: title,
+            i18n_type: "XHTML",
+            accept_translations: "true",
+        };
 
-            let promise = new Promise((resolve, reject) => {
-                request
-                    .get(`https://www.transifex.com/api/2/project/${project}/resource/${slug}/`, (__e, r, __b) => {
-                        let method = r.statusCode === 404 ? "POST" : "PUT";
-                        let uri =
-                            r.statusCode === 404 ? `https://www.transifex.com/api/2/project/${project}/resources/` : `https://www.transifex.com/api/2/project/${project}/resource/${slug}/content/`;
+        let promise = new Promise((resolve, reject) => {
+            request
+                .get(`https://www.transifex.com/api/2/project/${project}/resource/${slug}/`, (__e, r, __b) => {
+                    let method = r.statusCode === 404 ? "POST" : "PUT";
+                    let uri =
+                        r.statusCode === 404 ? `https://www.transifex.com/api/2/project/${project}/resources/` : `https://www.transifex.com/api/2/project/${project}/resource/${slug}/content/`;
 
-                        request({
-                                method,
-                                uri,
+                    request({
+                        method,
+                        uri,
+                        auth: {
+                            user: "api",
+                            pass: TRANSIFEX_API_KEY,
+                            sendImmediately: true,
+                        },
+                        headers: {
+                            ContentType: "application/json",
+                        },
+                        json: true,
+                        body: payload,
+                    },
+                        (e1, r1, b1) => {
+                            if (e1) {
+                                reject(e1);
+                            }
+                            if (r1.statusCode > 201) {
+                                console.log('Error', payload.slug);
+                                request({
+                                    method: 'post',
+                                    uri: 'https://hooks.slack.com/services/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',
+                                    headers: {
+                                        ContentType: "application/json",
+                                    },
+                                    json: true,
+                                    body: {
+                                        text: `*TRANSIFEX UPLOAD ERROR*\nArticle with slug ${payload.slug}, failed to upload to transifex.\nResponse from transifex servers: ${b1}.`,
+                                        attachments: [{
+                                            title: 'What went to transifex',
+                                            text: JSON.stringify(payload)
+                                        }]
+                                    }
+                                }, () => {
+                                    console.log('Hooked')
+                                })
+
+                                reject(e);
+                                return;
+                            }
+                            let updatePayload = {
+                                slug: payload.slug,
+                                name: payload.name,
+                                categories: item.fields.country && item.fields.country.fields && item.fields.country.fields.slug ? [item.fields.country.fields.slug] : null,
+                            };
+
+
+                            request({
+                                method: "PUT",
+                                uri: `https://www.transifex.com/api/2/project/${project}/resource/${slug}/`,
                                 auth: {
                                     user: "api",
                                     pass: TRANSIFEX_API_KEY,
@@ -121,116 +169,129 @@ function importArticleAndVideo(req, space) {
                                     ContentType: "application/json",
                                 },
                                 json: true,
-                                body: payload,
+                                body: updatePayload,
                             },
-                            (e1, r1, b1) => {
-                                if (e1) {
-                                    reject(e1);
-                                }
-                                if (r1.statusCode > 201) {
-                                    console.log('Error', payload.slug);
-                                    request({
-                                        method: 'post',
-                                        uri: 'https://hooks.slack.com/services/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',
-                                        headers: {
-                                            ContentType: "application/json",
-                                        },
-                                        json: true,
-                                        body: {
-                                            text: `*TRANSIFEX UPLOAD ERROR*\nArticle with slug ${payload.slug}, failed to upload to transifex.\nResponse from transifex servers: ${b1}.`,
-                                            attachments: [{
-                                                title: 'What went to transifex',
-                                                text: JSON.stringify(payload)
-                                            }]
-                                        }
-                                    }, () => {
-                                        console.log('Hooked')
-                                    })
-
-                                    reject(e);
-                                    return;
-                                }
-                                let updatePayload = {
-                                    slug: payload.slug,
-                                    name: payload.name,
-                                    categories: item.fields.country && item.fields.country.fields && item.fields.country.fields.slug ? [item.fields.country.fields.slug] : null,
-                                };
-
-
-                                request({
-                                        method: "PUT",
-                                        uri: `https://www.transifex.com/api/2/project/${project}/resource/${slug}/`,
-                                        auth: {
-                                            user: "api",
-                                            pass: TRANSIFEX_API_KEY,
-                                            sendImmediately: true,
-                                        },
-                                        headers: {
-                                            ContentType: "application/json",
-                                        },
-                                        json: true,
-                                        body: updatePayload,
-                                    },
-                                    (e, r, b) => {
-                                        if (e) {
-                                            reject(e);
-                                        }
-                                        resolve(b1);
-
-                                        if (r.statusCode > 201) {
-                                            console.log('Error', payload.slug);
-                                            request({
-                                                method: 'post',
-                                                headers: {
-                                                    ContentType: "application/json",
-                                                },
-                                                json: true,
-                                                uri: 'https://hooks.slack.com/services/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',
-                                                body: {
-                                                    text: `*TRANSIFEX UPLOAD ERROR*\nArticle with slug ${payload.slug}, failed to upload to transifex.\nResponse from transifex servers: ${b1}.`,
-                                                    attachments: [{
-                                                        title: 'What went to transifex',
-                                                        text: JSON.stringify(payload)
-                                                    }]
-                                                }
-                                            }, () => {
-                                                console.log('Hooked')
-                                            })
-
-                                            reject(e);
-                                            return;
-                                        } else {
-                                            request({
-                                                method: 'post',
-                                                headers: {
-                                                    ContentType: "application/json",
-                                                },
-                                                json: true,
-                                                uri: 'https://hooks.slack.com/services/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',
-                                                body: {
-                                                    text: `Hi! I just uploaded ${payload.slug} successfully to transifex.`
-                                                }
-                                            }, () => {
-                                                console.log('Success Hooked')
-                                            })
-                                        }
+                                (e, r, b) => {
+                                    if (e) {
+                                        reject(e);
                                     }
-                                );
-                            }
-                        );
-                    })
-                    .auth("api", TRANSIFEX_API_KEY, false);
-            });
+                                    resolve(b1);
 
-            promise
-                .then(() => {
-                    console.log("Success");
+                                    if (r.statusCode > 201) {
+                                        console.log('Error', payload.slug);
+                                        request({
+                                            method: 'post',
+                                            headers: {
+                                                ContentType: "application/json",
+                                            },
+                                            json: true,
+                                            uri: 'https://hooks.slack.com/services/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',
+                                            body: {
+                                                text: `*TRANSIFEX UPLOAD ERROR*\nArticle with slug ${payload.slug}, failed to upload to transifex.\nResponse from transifex servers: ${b1}.`,
+                                                attachments: [{
+                                                    title: 'What went to transifex',
+                                                    text: JSON.stringify(payload)
+                                                }]
+                                            }
+                                        }, () => {
+                                            console.log('Hooked')
+                                        })
+
+                                        reject(e);
+                                        return;
+                                    } else {
+                                        request({
+                                            method: 'post',
+                                            headers: {
+                                                ContentType: "application/json",
+                                            },
+                                            json: true,
+                                            uri: 'https://hooks.slack.com/services/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',
+                                            body: {
+                                                text: `Hi! I just uploaded ${payload.slug} successfully to transifex.`
+                                            }
+                                        }, () => {
+                                            console.log('Success Hooked')
+                                        })
+                                    }
+                                }
+                            );
+                        }
+                    );
                 })
-                .catch(e => console.log("Error", e));
+                .auth("api", TRANSIFEX_API_KEY, false);
         });
+
+        promise
+            .then(() => {
+                console.log("Success");
+            })
+            .catch(e => console.log("Error", e));
     });
+    // }).catch(error => {
+    // 	console.error(error);
+    // });
 }
 
+function importCategory(req, space) {
+    // space.getApiKeys().then(k => {
+    const spaceId = req.body.sys.space.sys.id;
+    var accessToken = process.env.CONTENTFUL_CONTENT_TOKEN;// || k.items[0].accessToken
+    var host = process.env.CONTENTFUL_CONTENT_HOST;
+    client = contentful.createClient({
+        space: spaceId,
+        accessToken: accessToken,
+        host: host,
+    });
+    client.getEntries({
+        include: 10,
+        content_type: "category",
+        "fields.slug": req.body.fields.slug["en-US"],
+        limit: 1000,
+    })
+        .then(e => {
+            let categories = _.flattenDeep(e.items.filter(c1 => c1 && c1.fields).map(c1 => [c1, Array.from(c1.fields.categories || [])])).filter(_.identity);
+            console.log(_.uniq(categories.map(c => c.fields.searchable)));
+            categories = categories.filter(c => !!c.fields.searchable);
+            console.log("Not updating categories", categories.filter(c => !!!c.fields.searchable).map(a => a.fields));
+
+            let promises = categories.map(category => () => fixCategory(space, category).then(c => console.log(category.fields.slug)));
+            promiseSerial(promises)
+                .then(() => uploadCategoriesToTransifex(client, spaceId))
+                .then(c => console.log("Complete"));
+        });
+    // });
+}
+function importCountry(req, space) {
+    // space.getApiKeys().then(k => {
+    var accessToken = process.env.CONTENTFUL_CONTENT_TOKEN;// || k.items[0].accessToken
+    var host = process.env.CONTENTFUL_CONTENT_HOST;
+    client = contentful.createClient({
+        space: spaceId,
+        accessToken: accessToken,
+        host: host,
+    });
+    client.getEntries({
+        include: 10,
+        content_type: "country",
+        "fields.slug": req.body.fields.slug["en-US"],
+        limit: 1000,
+    })
+        .then(e => {
+            let country = _.first(e.items);
+            let categories = _.flattenDeep(country.fields.categories.filter(c1 => c1 && c1.fields).map(c1 => [c1, Array.from(c1.fields.categories || [])])).filter(_.identity);
+            console.log(_.uniq(categories.map(c => c.fields.searchable)));
+            categories = categories.filter(c => !!c.fields.searchable);
+            console.log("Not updating categories", categories.filter(c => !!!c.fields.searchable).map(a => a.fields));
+
+            let promises = categories.map(category => () => fixCategory(space, category, country).then(c => console.log(category.fields.slug)));
+            promiseSerial(promises)
+                .then(() => uploadCategoriesToTransifex(client, spaceId))
+                .then(c => console.log("Complete"));
+        });
+    // });
+
+}
 function uploadCategoriesToTransifex(client, spaceId) {
     let locale = contentfulPrimaryLanguage[spaceId] ? contenfulLanguageDictionary[contentfulPrimaryLanguage[spaceId]] : "en";
     let project = transifexToSpaceDictionary[spaceId];
@@ -260,19 +321,19 @@ function uploadCategoriesToTransifex(client, spaceId) {
                 let uri = r.statusCode === 404 ? `https://www.transifex.com/api/2/project/${project}/resources/` : `https://www.transifex.com/api/2/project/${project}/resource/${slug}/content/`;
                 console.log(r.statusCode, method, uri);
                 request({
-                        method,
-                        uri,
-                        auth: {
-                            user: "api",
-                            pass: TRANSIFEX_API_KEY,
-                            sendImmediately: true,
-                        },
-                        headers: {
-                            ContentType: "application/json",
-                        },
-                        json: true,
-                        body: payload,
+                    method,
+                    uri,
+                    auth: {
+                        user: "api",
+                        pass: TRANSIFEX_API_KEY,
+                        sendImmediately: true,
                     },
+                    headers: {
+                        ContentType: "application/json",
+                    },
+                    json: true,
+                    body: payload,
+                },
                     (e1, r1, b1) => {
                         if (e1) {
                             console.log(e1);
@@ -285,19 +346,19 @@ function uploadCategoriesToTransifex(client, spaceId) {
                         };
 
                         request({
-                                method: "PUT",
-                                uri: `https://www.transifex.com/api/2/project/${project}/resource/${slug}/`,
-                                auth: {
-                                    user: "api",
-                                    pass: TRANSIFEX_API_KEY,
-                                    sendImmediately: true,
-                                },
-                                headers: {
-                                    ContentType: "application/json",
-                                },
-                                json: true,
-                                body: updatePayload,
+                            method: "PUT",
+                            uri: `https://www.transifex.com/api/2/project/${project}/resource/${slug}/`,
+                            auth: {
+                                user: "api",
+                                pass: TRANSIFEX_API_KEY,
+                                sendImmediately: true,
                             },
+                            headers: {
+                                ContentType: "application/json",
+                            },
+                            json: true,
+                            body: updatePayload,
+                        },
                             (e, r, b) => {
                                 console.log(b);
                             }
@@ -323,73 +384,16 @@ module.exports = function (req, res) {
                 switch (req.body.sys.contentType.sys.id) {
                     case "article":
                     case "video":
-                        /*
-                        Uploading content to transifex
-                        */
+						/*
+						Uploading content to transifex
+						*/
                         importArticleAndVideo(req, space);
                         break;
                     case "category":
-                        space.getApiKeys().then(k => {
-
-                            var accessToken = process.env.CONTENTFUL_CONTENT_TOKEN || k.items[0].accessToken
-                            var host = process.env.CONTENTFUL_CONTENT_HOST;
-                            client = contentful.createClient({
-                                space: spaceId,
-                                accessToken: accessToken,
-                                host: host,
-                            });
-                            client
-                                .getEntries({
-                                    include: 10,
-                                    content_type: "category",
-                                    "fields.slug": req.body.fields.slug["en-US"],
-                                    limit: 1000,
-                                })
-                                .then(e => {
-                                    let categories = _.flattenDeep(e.items.filter(c1 => c1 && c1.fields).map(c1 => [c1, Array.from(c1.fields.categories || [])])).filter(_.identity);
-                                    console.log(_.uniq(categories.map(c => c.fields.searchable)));
-                                    categories = categories.filter(c => !!c.fields.searchable);
-                                    console.log("Not updating categories", categories.filter(c => !!!c.fields.searchable).map(a => a.fields));
-
-                                    let promises = categories.map(category => () => fixCategory(space, category).then(c => console.log(category.fields.slug)));
-                                    promiseSerial(promises)
-                                        .then(() => uploadCategoriesToTransifex(client, spaceId))
-                                        .then(c => console.log("Complete"));
-                                });
-                        });
-
+                        importCategory(req, space);
                         break;
                     case "country":
-                        space.getApiKeys().then(k => {
-
-                            var accessToken = process.env.CONTENTFUL_CONTENT_TOKEN || k.items[0].accessToken
-                            var host = process.env.CONTENTFUL_CONTENT_HOST;
-                            client = contentful.createClient({
-                                space: spaceId,
-                                accessToken: accessToken,
-                                host: host,
-                            });
-                            client
-                                .getEntries({
-                                    include: 10,
-                                    content_type: "country",
-                                    "fields.slug": req.body.fields.slug["en-US"],
-                                    limit: 1000,
-                                })
-                                .then(e => {
-                                    let country = _.first(e.items);
-                                    let categories = _.flattenDeep(country.fields.categories.filter(c1 => c1 && c1.fields).map(c1 => [c1, Array.from(c1.fields.categories || [])])).filter(_.identity);
-                                    console.log(_.uniq(categories.map(c => c.fields.searchable)));
-                                    categories = categories.filter(c => !!c.fields.searchable);
-                                    console.log("Not updating categories", categories.filter(c => !!!c.fields.searchable).map(a => a.fields));
-
-                                    let promises = categories.map(category => () => fixCategory(space, category, country).then(c => console.log(category.fields.slug)));
-                                    promiseSerial(promises)
-                                        .then(() => uploadCategoriesToTransifex(client, spaceId))
-                                        .then(c => console.log("Complete"));
-                                });
-                        });
-
+                        importCountry(req, space);
                         break;
                     default:
                         break;
