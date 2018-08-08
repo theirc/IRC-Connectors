@@ -78,6 +78,9 @@ function updateContentful(spaceId, slug, language, payload, contentType) {
                 space: s,
             }))
         )
+        .catch(error => {
+            console.error(error);
+        })
         .then(({
             entry,
             space
@@ -98,6 +101,9 @@ function updateContentful(spaceId, slug, language, payload, contentType) {
                 console.log("Updating", language, slug);
                 return entry.update(); //.then(e => e.publish());
             }
+        })
+        .catch(error => {
+            console.error(error);
         });
 }
 
@@ -110,15 +116,17 @@ module.exports = function (req, res) {
         reviewed
     } = req.body;
 
-    const sign_v2 = (url, date, data, secret) => {
-        const content_md5 = md5(data);
-        const msg = ["POST", url, date, content_md5].join("\n");
-        const hmac = crypto.createHmac("sha256", secret);
-        return hmac
-            .update(msg)
-            .digest()
-            .toString("base64");
-    };
+    console.log('req.body', req.body);
+
+    // const sign_v2 = (url, date, data, secret) => {
+    //     const content_md5 = md5(data);
+    //     const msg = ["POST", url, date, content_md5].join("\n");
+    //     const hmac = crypto.createHmac("sha256", secret);
+    //     return hmac
+    //         .update(msg)
+    //         .digest()
+    //         .toString("base64");
+    // };
 
     switch (event) {
         case "review_completed":
