@@ -19,6 +19,7 @@ const md = new Remarkable("full", {
 
 const TRANSIFEX_API_KEY = process.env.TRANSIFEX_API_KEY;
 const CONTENTFUL_API_TOKEN = process.env.CONTENTFUL_API_TOKEN;
+const TRANSIFEX_API_URL = "https://www.transifex.com/api/2/project";
 let {
     transifexToSpaceDictionary,
     contenfulLanguageDictionary,
@@ -41,10 +42,6 @@ function generateContentForTransifex(article) {
     content = cleanUpHTML(md.render(content));
 
     let body = `<html><body><div class="title">${title}</div><div class="subtitle">${lead}</div>${content}</body></html>`;
-
-    /*
-    Placeholder for Rey's Magic
-    */
 
     return body;
 }
@@ -104,10 +101,10 @@ function importArticleAndVideo(req, space) {
 
         let promise = new Promise((resolve, reject) => {
             request
-                .get(`https://www.transifex.com/api/2/project/${project}/resource/${slug}/`, (__e, r, __b) => {
+                .get(`${TRANSIFEX_API_URL}/${project}/resource/${slug}/`, (__e, r, __b) => {
                     let method = r.statusCode === 404 ? "POST" : "PUT";
                     let uri =
-                        r.statusCode === 404 ? `https://www.transifex.com/api/2/project/${project}/resources/` : `https://www.transifex.com/api/2/project/${project}/resource/${slug}/content/`;
+                        r.statusCode === 404 ? `${TRANSIFEX_API_URL}/${project}/resources/` : `${TRANSIFEX_API_URL}/${project}/resource/${slug}/content/`;
 
                     request({
                         method,
@@ -159,7 +156,7 @@ function importArticleAndVideo(req, space) {
 
                             request({
                                 method: "PUT",
-                                uri: `https://www.transifex.com/api/2/project/${project}/resource/${slug}/`,
+                                uri: `${TRANSIFEX_API_URL}/${project}/resource/${slug}/`,
                                 auth: {
                                     user: "api",
                                     pass: TRANSIFEX_API_KEY,
@@ -227,10 +224,9 @@ function importArticleAndVideo(req, space) {
                 console.log("Success");
             })
             .catch(e => console.log("Error", e));
+    }).catch(error => {
+    	console.error(error);
     });
-    // }).catch(error => {
-    // 	console.error(error);
-    // });
 }
 
 function importCategory(req, space) {
@@ -316,9 +312,9 @@ function uploadCategoriesToTransifex(client, spaceId) {
         };
 
         request
-            .get(`https://www.transifex.com/api/2/project/${project}/resource/${slug}/`, (__e, r, __b) => {
+            .get(`${TRANSIFEX_API_URL}/${project}/resource/${slug}/`, (__e, r, __b) => {
                 let method = r.statusCode === 404 ? "POST" : "PUT";
-                let uri = r.statusCode === 404 ? `https://www.transifex.com/api/2/project/${project}/resources/` : `https://www.transifex.com/api/2/project/${project}/resource/${slug}/content/`;
+                let uri = r.statusCode === 404 ? `${TRANSIFEX_API_URL}/${project}/resources/` : `${TRANSIFEX_API_URL}/${project}/resource/${slug}/content/`;
                 console.log(r.statusCode, method, uri);
                 request({
                     method,
@@ -347,7 +343,7 @@ function uploadCategoriesToTransifex(client, spaceId) {
 
                         request({
                             method: "PUT",
-                            uri: `https://www.transifex.com/api/2/project/${project}/resource/${slug}/`,
+                            uri: `${TRANSIFEX_API_URL}/${project}/resource/${slug}/`,
                             auth: {
                                 user: "api",
                                 pass: TRANSIFEX_API_KEY,
@@ -384,9 +380,6 @@ module.exports = function (req, res) {
                 switch (req.body.sys.contentType.sys.id) {
                     case "article":
                     case "video":
-						/*
-						Uploading content to transifex
-						*/
                         importArticleAndVideo(req, space);
                         break;
                     case "category":
