@@ -294,7 +294,7 @@ function uploadCategoriesToTransifex(client, spaceId) {
     client.getEntries({
         limit: 1e3,
         content_type: "category",
-        locale: locale
+        // locale: locale
     }).then(e => {
         let categoryNames = e.items
             .map(category => [category.fields.slug, category.fields.name])
