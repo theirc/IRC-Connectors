@@ -54,20 +54,23 @@ module.exports = function (req, res) {
                         .replace(/٨/g, 8)
                         .replace(/٩/g, 9);
 
-                    console.log(entry.value.message);
+                    console.log('message: ' + entry.value.message);
                     let hasNumbers =
                         REGEX.test(message) || EREGEX.test(message);
                     let isActuallyALink =
                         IDREGEX.test(message) || SREGEX.message;
 
+                    console.log('hasNumbers: ' + hasNumbers);
+                    console.log('isLink: ' + isActuallyALink);
                     if (hasNumbers && !isActuallyALink) {
+                        console.log('request to hide comment ' + comment_id);
                         FB.api(
                             `/${comment_id}`,
                             "POST", {
                                 is_hidden: true,
                             },
                             function (response2) {
-                                console.log(response2);
+                                console.log('response: ' + response2);
                                 if (response2 && !response2.error) {
                                     /* handle the result */
                                 }
