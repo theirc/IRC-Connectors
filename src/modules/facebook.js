@@ -58,7 +58,7 @@ module.exports = function (req, res) {
                     let hasNumbers =
                         REGEX.test(message) || EREGEX.test(message);
                     let isActuallyALink =
-                        IDREGEX.test(message) || SREGEX.message;
+                        IDREGEX.test(message) || SREGEX.test(message);
 
                     console.log('hasNumbers: ' + hasNumbers);
                     console.log('isLink: ' + isActuallyALink);
@@ -70,7 +70,7 @@ module.exports = function (req, res) {
                                 is_hidden: true,
                             },
                             function (response2) {
-                                console.log('response: ' + response2);
+                                console.log(response2);
                                 if (response2 && !response2.error) {
                                     /* handle the result */
                                 }
