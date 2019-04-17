@@ -18,6 +18,7 @@ const md = new Remarkable("full", {
 });
 
 const TRANSIFEX_API_KEY = process.env.TRANSIFEX_API_KEY;
+const TRANSIFEX_ORGANIZATION_SLUG = process.env.TRANSIFEX_ORGANIZATION_SLUG;
 const CONTENTFUL_API_TOKEN = process.env.CONTENTFUL_API_TOKEN;
 const TRANSIFEX_API_URL = "https://www.transifex.com/api/2/project";
 const TRANSIFEX_NEW_API_URL = "https://api.transifex.com/organizations";
@@ -102,8 +103,7 @@ function importArticleAndVideo(req, space) {
 
         let promise = new Promise((resolve, reject) => {
             request
-                .get(`${TRANSIFEX_NEW_API_URL}/refugeeinfo/projects/${project}/resources/${slug}/`, (__e, r, __b) => {
-                // .get(`${TRANSIFEX_API_URL}/${project}/resource/${slug}/`, (__e, r, __b) => {
+                .get(`${TRANSIFEX_NEW_API_URL}/${TRANSIFEX_ORGANIZATION_SLUG}/projects/${project}/resources/${slug}/`, (__e, r, __b) => {
                     let method = r.statusCode === 404 ? "POST" : "PUT";
                     let uri =
                         r.statusCode === 404 ? `${TRANSIFEX_API_URL}/${project}/resources/` : `${TRANSIFEX_API_URL}/${project}/resource/${slug}/content/`;
@@ -314,8 +314,7 @@ function uploadCategoriesToTransifex(client, spaceId) {
         };
 
         request
-            .get(`${TRANSIFEX_NEW_API_URL}/refugeeinfo/projects/${project}/resources/${slug}/`, (__e, r, __b) => {
-            // .get(`${TRANSIFEX_API_URL}/${project}/resource/${slug}/`, (__e, r, __b) => {
+            .get(`${TRANSIFEX_NEW_API_URL}/${TRANSIFEX_ORGANIZATION_SLUG}/projects/${project}/resources/${slug}/`, (__e, r, __b) => {
                 let method = r.statusCode === 404 ? "POST" : "PUT";
                 let uri = r.statusCode === 404 ? `${TRANSIFEX_API_URL}/${project}/resources/` : `${TRANSIFEX_API_URL}/${project}/resource/${slug}/content/`;
                 console.log(r.statusCode, method, uri);
