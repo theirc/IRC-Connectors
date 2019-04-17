@@ -1,3 +1,6 @@
+# Local settings (env vars)
+local_settings.ini
+
 # Logs
 logs
 *.log
