@@ -14,7 +14,7 @@ const {
 const toMarkdown = require("to-markdown");
 const contentfulManagement = require("contentful-management");
 
-const TRANSIFEX_API_KEY = process.env.TRANSIFEX_API_KEY;
+const TRANSIFEX_API_TOKEN = process.env.TRANSIFEX_API_TOKEN;
 const CONTENTFUL_API_TOKEN = process.env.CONTENTFUL_API_TOKEN;
 
 const client = contentfulManagement.createClient({
@@ -37,7 +37,7 @@ function resourceTranslationRequest(project, key, l) {
                     reject(null);
                 }
             })
-            .auth("api", TRANSIFEX_API_KEY, false);
+            .auth("api", TRANSIFEX_API_TOKEN, false);
     });
 }
 

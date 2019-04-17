@@ -17,9 +17,11 @@ const md = new Remarkable("full", {
     breaks: true,
 });
 
-const TRANSIFEX_API_KEY = process.env.TRANSIFEX_API_KEY;
+const TRANSIFEX_API_TOKEN = process.env.TRANSIFEX_API_TOKEN;
+const TRANSIFEX_ORGANIZATION_SLUG = process.env.TRANSIFEX_ORGANIZATION_SLUG;
 const CONTENTFUL_API_TOKEN = process.env.CONTENTFUL_API_TOKEN;
 const TRANSIFEX_API_URL = "https://www.transifex.com/api/2/project";
+const TRANSIFEX_NEW_API_URL = "https://api.transifex.com/organizations";
 let {
     transifexToSpaceDictionary,
     contenfulLanguageDictionary,
@@ -101,7 +103,7 @@ function importArticleAndVideo(req, space) {
 
         let promise = new Promise((resolve, reject) => {
             request
-                .get(`${TRANSIFEX_API_URL}/${project}/resource/${slug}/`, (__e, r, __b) => {
+                .get(`${TRANSIFEX_NEW_API_URL}/${TRANSIFEX_ORGANIZATION_SLUG}/projects/${project}/resources/${slug}/`, (__e, r, __b) => {
                     let method = r.statusCode === 404 ? "POST" : "PUT";
                     let uri =
                         r.statusCode === 404 ? `${TRANSIFEX_API_URL}/${project}/resources/` : `${TRANSIFEX_API_URL}/${project}/resource/${slug}/content/`;
@@ -111,7 +113,7 @@ function importArticleAndVideo(req, space) {
                         uri,
                         auth: {
                             user: "api",
-                            pass: TRANSIFEX_API_KEY,
+                            pass: TRANSIFEX_API_TOKEN,
                             sendImmediately: true,
                         },
                         headers: {
@@ -159,7 +161,7 @@ function importArticleAndVideo(req, space) {
                                 uri: `${TRANSIFEX_API_URL}/${project}/resource/${slug}/`,
                                 auth: {
                                     user: "api",
-                                    pass: TRANSIFEX_API_KEY,
+                                    pass: TRANSIFEX_API_TOKEN,
                                     sendImmediately: true,
                                 },
                                 headers: {
@@ -216,7 +218,7 @@ function importArticleAndVideo(req, space) {
                         }
                     );
                 })
-                .auth("api", TRANSIFEX_API_KEY, false);
+                .auth("api", TRANSIFEX_API_TOKEN, false);
         });
 
         promise
@@ -312,7 +314,7 @@ function uploadCategoriesToTransifex(client, spaceId) {
         };
 
         request
-            .get(`${TRANSIFEX_API_URL}/${project}/resource/${slug}/`, (__e, r, __b) => {
+            .get(`${TRANSIFEX_NEW_API_URL}/${TRANSIFEX_ORGANIZATION_SLUG}/projects/${project}/resources/${slug}/`, (__e, r, __b) => {
                 let method = r.statusCode === 404 ? "POST" : "PUT";
                 let uri = r.statusCode === 404 ? `${TRANSIFEX_API_URL}/${project}/resources/` : `${TRANSIFEX_API_URL}/${project}/resource/${slug}/content/`;
                 console.log(r.statusCode, method, uri);
@@ -321,7 +323,7 @@ function uploadCategoriesToTransifex(client, spaceId) {
                     uri,
                     auth: {
                         user: "api",
-                        pass: TRANSIFEX_API_KEY,
+                        pass: TRANSIFEX_API_TOKEN,
                         sendImmediately: true,
                     },
                     headers: {
@@ -346,7 +348,7 @@ function uploadCategoriesToTransifex(client, spaceId) {
                             uri: `${TRANSIFEX_API_URL}/${project}/resource/${slug}/`,
                             auth: {
                                 user: "api",
-                                pass: TRANSIFEX_API_KEY,
+                                pass: TRANSIFEX_API_TOKEN,
                                 sendImmediately: true,
                             },
                             headers: {
@@ -363,7 +365,7 @@ function uploadCategoriesToTransifex(client, spaceId) {
                 );
             })
 
-            .auth("api", TRANSIFEX_API_KEY, false);
+            .auth("api", TRANSIFEX_API_TOKEN, false);
     });
 }
 
