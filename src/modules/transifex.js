@@ -99,7 +99,7 @@ function updateContentful(spaceId, slug, language, payload, contentType) {
 
                 // Save and pubish
                 console.log("Updating", language, slug);
-                return entry.update(); //.then(e => e.publish());
+                return entry.update().then(e => e.publish());
             }
         })
         .catch(error => {
