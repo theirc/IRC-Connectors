@@ -131,6 +131,7 @@ module.exports = function (req, res) {
     switch (event) {
         case "review_completed":
         case "translation_completed":
+        case "translation_completed_updated":
             resourceTranslationRequest(project, resource, language).then(t => {
                 let spaceId = transifexToSpaceDictionary[project];
                 let slug = resource.replace(/html$/, "");
