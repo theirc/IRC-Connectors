@@ -93,7 +93,8 @@ function importArticleAndVideo(req, space) {
 
         let payload = {
             slug,
-            content: unicodeEscape(content),
+            // content: unicodeEscape(content),
+            content: content,
             name: title,
             i18n_type: "XHTML",
             accept_translations: "true",
@@ -125,7 +126,8 @@ function importArticleAndVideo(req, space) {
                                 reject(e1);
                             }
                             if (r1.statusCode > 201) {
-                                console.log('Error', payload.slug);
+																console.log('Error', payload);
+																console.log(item, content);
                                 request({
                                     method: 'post',
                                     uri: 'https://hooks.slack.com/services/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',
