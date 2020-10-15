@@ -19,7 +19,7 @@ const md = new Remarkable("full", {
 
 const TRANSIFEX_API_KEY = process.env.TRANSIFEX_API_KEY;
 const CONTENTFUL_API_TOKEN = process.env.CONTENTFUL_API_TOKEN;
-const TRANSIFEX_API_URL = "https://www.transifex.com/api/2/project";
+const TRANSIFEX_API_URL = "https://www.transifex.com/api/3/project";
 let {
     transifexToSpaceDictionary,
     contenfulLanguageDictionary,
