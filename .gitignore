@@ -115,5 +115,4 @@ data/
 
 
 .env
-.env*
 package-lock.json
