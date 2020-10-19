@@ -24,6 +24,7 @@ const client = contentfulManagement.createClient({
 function resourceTranslationRequest(project, key, l) {
     return new Promise((resolve, reject) => {
         request
+            /*---- API version 2
             .get(`https://www.transifex.com/api/2/project/${project}/resource/${key}/translation/${l}/`, (e, r, b) => {
                 if (e) {
                     reject(e);
@@ -38,6 +39,22 @@ function resourceTranslationRequest(project, key, l) {
                 }
             })
             .auth("api", TRANSIFEX_API_KEY, false);
+            ----*/
+            /*------- API v3 -----*/
+            .get(`https://rest.api.transifex.com/resource_translations?filter[resource]=o:${project}:p:${project}:r:${key}&filter[language]=l:${l}`, (e, r, b) => {
+                if (e) {
+                    reject(e);
+                    return;
+                }
+                try {
+                    resolve(JSON.parse(b));
+                } catch (e) {
+                    //reject(e);
+                    console.log("Error", b);
+                    reject(null);
+                }
+            })
+            .oauth('Authorization: Bearer ',TRANSIFEX_API_KEY, false)
     });
 }
 
