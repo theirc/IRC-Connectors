@@ -44,7 +44,7 @@
     "feathers-hooks-common": "^3.10.0",
     "feathers-rest": "^1.8.0",
     "helmet": "^3.9.0",
-    "lodash": "^4.17.4",
+    "lodash": "^4.17.19",
     "remarkable": "^1.7.1",
     "serve-favicon": "^2.4.5",
     "to-markdown": "^3.1.0",
