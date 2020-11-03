@@ -24,7 +24,7 @@ const client = contentfulManagement.createClient({
     accessToken: CONTENTFUL_API_TOKEN,
 });
 
-function resourceTranslationRequest(project, key, l) {
+function getResourceTranslation(project, key, l) {
     return new Promise((resolve, reject) => {
         request
             /*------- API v3 -----*/
@@ -135,7 +135,7 @@ module.exports = function (req, res) {
     switch (event) {
         case "review_completed":
         case "translation_completed":
-            resourceTranslationRequest(project, resource, language).then(t => {
+            getResourceTranslation(project, resource, language).then(t => {
 
                 //Check if transifex project needs to update Contentfull:
                 if (project != process.env.TRANSIFEX_PROJECT_SLUG_SERVICES) {
@@ -223,6 +223,7 @@ module.exports = function (req, res) {
 
 function updateServiceInCMS(resource, language, callback) {
     //TO DO: integrate function with Signpost CMS
+    /*
     let uri = `${process.env.SIGNPOST_API_URL}/`;
     let requestData = {
         method: 'PUT',
@@ -250,4 +251,5 @@ function updateServiceInCMS(resource, language, callback) {
     console.log("requestData: " + JSON.stringify(requestData))
 
     request(requestData, (e, r, b) => { callback(e, r, b) })
+    */
 }
