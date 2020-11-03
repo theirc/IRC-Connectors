@@ -1,6 +1,8 @@
 const contentfulManagement = require("contentful-management");
 const contentful = require("contentful");
 const _ = require("lodash");
+const transifexUtils = require('./transifex-utils');
+
 const {
     promiseSerial,
     reverseMap,
@@ -37,32 +39,6 @@ const mgmtClient = contentfulManagement.createClient({
 transifexToSpaceDictionary = reverseMap(transifexToSpaceDictionary);
 contenfulLanguageDictionary = reverseMap(contenfulLanguageDictionary);
 
-function generateContentForTransifex(article) {
-    let {
-        lead,
-        title,
-        content
-    } = article.fields;
-    lead = cleanUpHTML(md.render(lead));
-    content = cleanUpHTML(md.render(content));
-
-    let body = `<html><body><div class="title">${title}</div><div class="subtitle">${lead}</div>${content}</body></html>`;
-
-    return body;
-}
-
-function unicodeEscape(str) {
-    return str.replace(/[\s\S]/g, function (character) {
-        var escape = character.charCodeAt().toString(16),
-            longhand = escape.length > 2;
-        if (!longhand) {
-            return character;
-        }
-        return '&#' + ('x') + ('0000' + escape).slice(longhand ? -4 : -2) + ';';
-    });
-}
-
-
 function importArticleAndVideo(req, space) {
     const {
         body
@@ -87,7 +63,7 @@ function importArticleAndVideo(req, space) {
         content_type: body.sys.contentType.sys.id
     }).then(e => {
         const item = _.first(e.items);
-        let content = generateContentForTransifex(item);
+        let content = transifexUtils.generateContentForTransifex(item);
         let {
             slug,
             title
@@ -99,7 +75,7 @@ function importArticleAndVideo(req, space) {
 
         let payload = {
             slug,
-            content: unicodeEscape(content),
+            content: transifexUtils.unicodeEscape(content),
             name: title,
             i18n_type: "XHTML",
             accept_translations: "true",
@@ -113,7 +89,7 @@ function importArticleAndVideo(req, space) {
                 .get(`${process.env.TRANSIFEX_API_URL_v3}/resources/o:${TRANSIFEX_ORGANIZATION_SLUG}p:${project}r:${slug}/`, (__e, r, __b) => {
                     if (r.statusCode === 404) {
                         //if article doesn't exists, create it, else update it:
-                        createTransifexResource(
+                        transifexUtils.createTransifexResource(
                             project,                                //project
                             payload,                                //payload
                             (e1, r1, b1) => {
@@ -252,65 +228,41 @@ function uploadCategoriesToTransifex(client, spaceId) {
 
         let payload = {
             slug,
-            content: JSON.stringify(categoryDictionary),
             name: "Category Names And Descriptions",
             i18n_type: "KEYVALUEJSON",
             accept_translations: "true",
         };
 
-        request
-            .get(`${TRANSIFEX_NEW_API_URL}/${TRANSIFEX_ORGANIZATION_SLUG}/projects/${project}/resources/${slug}/`, (__e, r, __b) => {
-                let method = r.statusCode === 404 ? "POST" : "PUT";
-                let uri = r.statusCode === 404 ? `${TRANSIFEX_API_URL}/${project}/resources/` : `${TRANSIFEX_API_URL}/${project}/resource/${slug}/content/`;
-                console.log(r.statusCode, method, uri);
-                request({
-                    method,
-                    uri,
-                    auth: {
-                        user: "api",
-                        pass: TRANSIFEX_API_TOKEN,
-                        sendImmediately: true,
-                    },
-                    headers: {
-                        ContentType: "application/json",
-                    },
-                    json: true,
-                    body: payload,
-                },
-                    (e1, r1, b1) => {
-                        if (e1) {
-                            console.log(e1);
-                        }
-                        console.log(b1);
+        let content = JSON.stringify(categoryDictionary);
 
-                        let updatePayload = {
-                            slug: payload.slug,
-                            name: payload.name,
-                        };
-
-                        request({
-                            method: "PUT",
-                            uri: `${TRANSIFEX_API_URL}/${project}/resource/${slug}/`,
-                            auth: {
-                                user: "api",
-                                pass: TRANSIFEX_API_TOKEN,
-                                sendImmediately: true,
-                            },
-                            headers: {
-                                ContentType: "application/json",
-                            },
-                            json: true,
-                            body: updatePayload,
-                        },
-                            (e, r, b) => {
-                                console.log(b);
-                            }
-                        );
+        transifexUtils.getTransifexResourceBySlug(project, slug, (e, r) => {
+            if (e) {
+                console.log("getTransifexResourceBySlug Error: ", e);
+            }
+            //Revisar response a ver si el recurso ya existe
+            if(r.statusCode === 404){
+                //Si no existe crearlo y subirle el Resource file
+                transifexUtils.createTransifexResource(project, payload, (e,r) =>{
+                    if (e) {
+                        console.log("createTransifexResource Error: " + e);
                     }
-                );
-            })
-
-            .auth("api", TRANSIFEX_API_TOKEN, false);
+                    transifexUtils.uploadTransifexResourceFile(project, slug, content, (e,r) => {
+                        if (e) {
+                            console.log("createTransifexResource Error: " + e);
+                        }
+                        console.log("createTransifexResource Response: " + r);
+                    })
+                })
+            } else{
+                //Si existe subirle el Resource file
+                transifexUtils.uploadTransifexResourceFile(project, slug, content, (e,r) => {
+                    if (e) {
+                        console.log("createTransifexResource Error: " + e);
+                    }
+                    console.log("createTransifexResource Response: " + r);
+                })
+            }
+        })
     });
 }
 

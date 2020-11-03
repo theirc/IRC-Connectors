@@ -27,23 +27,6 @@ const client = contentfulManagement.createClient({
 function resourceTranslationRequest(project, key, l) {
     return new Promise((resolve, reject) => {
         request
-            /*------- API v2 ----
-                .get(`https://www.transifex.com/api/2/project/${project}/resource/${key}/translation/${l}/`, (e, r, b) => {
-                    if (e) {
-                        reject(e);
-                        return;
-                    }
-                    try {
-                        resolve(JSON.parse(b));
-                    } catch (e) {
-                        //reject(e);
-                        console.log("Error", b);
-                        reject(null);
-                    }
-                })
-                .auth("api", TRANSIFEX_API_TOKEN, false);
-            ------- API v2 -----*/
-
             /*------- API v3 -----*/
             .get(`${process.env.TRANSIFEX_API_URL_v3}/resource_translations?filter[resource]=o:${project}:p:${project}:r:${key}&filter[language]=l:${l}`, (e, r, b) => {
                 if (e) {
@@ -153,8 +136,10 @@ module.exports = function (req, res) {
         case "review_completed":
         case "translation_completed":
             resourceTranslationRequest(project, resource, language).then(t => {
+
                 //Check if transifex project needs to update Contentfull:
                 if (project != process.env.TRANSIFEX_PROJECT_SLUG_SERVICES) {
+                    
                     //Update Contentful with the new translation
                     let spaceId = transifexToSpaceDictionary[project];
                     let slug = resource.replace(/html$/, "");
