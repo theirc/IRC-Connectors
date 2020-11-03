@@ -36,6 +36,7 @@
     "contentful": "^5.0.1",
     "contentful-management": "^5.4.0",
     "cors": "^2.8.4",
+    "dotenv": "^8.2.0",
     "fb": "^2.0.0",
     "feathers": "^2.2.3",
     "feathers-configuration": "^0.4.2",
