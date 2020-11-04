@@ -6,7 +6,7 @@ const cheerio = require("cheerio");
 const contentful = require("contentful-management");
 const transifexUtils = require('./transifex-utils');
 
-const hookData = require('./example hook.json')
+const {signpostEntityPrefixes} = require("../config");
 
 require('dotenv').config();
 
@@ -119,8 +119,8 @@ module.exports = function (req, res) {
             transifexUtils.getResourceTranslation(project, resource, language).then(t => {
 
                 //Check if transifex project needs to update Contentfull:
-                if (project != process.env.TRANSIFEX_PROJECT_SLUG_SERVICES) {
-                    
+                if (project == process.env.TRANSIFEX_PROJECT_SLUG_CONTENTFUL) {
+
                     //Update Contentful with the new translation
                     let spaceId = transifexToSpaceDictionary[project];
                     let slug = resource.replace(/html$/, "");
@@ -183,24 +183,34 @@ module.exports = function (req, res) {
                             slug = slugParts[1];
                             contentType = slugParts[0];
                         }
-
-
-                        updateContentful(spaceId, slug, language, payload, contentType).then(p => { 
+                        updateContentful(spaceId, slug, language, payload, contentType).then(p => {
 
                         });
                     }
                 }
-                //Update Service in the database with the new translation
                 else {
-                    updateServiceInCMS(resource, language, t, (e, r, b) => {
+                    //Update Entity in the database with the new translation, based in the slug entity prefix
+                    let entityPrefix = resource.substr(0,4);
+                    switch (entityPrefix) {
+                        case signpostEntityPrefixes.services:
+                            updateServiceInCMS(resource, language, t, (e, r, b) => { });
+                            break;
+                        case signpostEntityPrefixes.providers:
+                            updateProviderInCMS(resource, language, t, (e, r, b) => { });
+                            break;
+                        case signpostEntityPrefixes.serviceCategories:
+                            updateServiceCategoryInCMS(resource, language, t, (e, r, b) => { });
+                            break;
+                        case signpostEntityPrefixes.providerCategories:
+                            updateProviderCategoryInCMS(resource, language, t, (e, r, b) => { });
+                            break;
+                        default:
+                            console.log("entityPrefix: " + entityPrefix + " not matching any defined prefixes: " + JSON.stringify(signpostEntityPrefixes))
+                            break;
+                    }
 
-                    });
                 }
             });
-            break;
-
-        default:
-            break;
     }
 
     res.sendStatus(200);
@@ -208,7 +218,7 @@ module.exports = function (req, res) {
 
 function updateServiceInCMS(resource, language, translation, callback) {
     console.log("translation: " + JSON.stringify(translation))
-    let uri = `${process.env.SIGNPOST_API_URL}/`;
+    let uri = `${process.env.SIGNPOST_API_URL}/services/translations`;
     let requestData = {
         method: 'POST',
         uri,
@@ -220,16 +230,97 @@ function updateServiceInCMS(resource, language, translation, callback) {
             slug: resource,
             language: language,
             name: translation.data[0].attributes.strings.other,
-            additionalInformation: translation.data[1].attributes.strings.other,
-            description: translation.data[2].attributes.strings.other,
+            description: translation.data[1] ? translation.data[1].attributes.strings.other : null,
+            additionalInformation: translation.data[2] ? translation.data[2].attributes.strings.other : null,
         }
     };
     console.log("requestData: " + JSON.stringify(requestData))
-    request(requestData, (e, r, b) => { 
-        if(e){
+    request(requestData, (e, r, b) => {
+        if (e) {
             console.log("updateServiceInCMS -> Error: ", e)
         }
         console.log("updateServiceInCMS -> response: ", r)
-        callback(e, r, b) 
+        callback(e, r, b)
+    })
+}
+
+function updateProviderCategoryInCMS(resource, language, translation, callback) {
+    console.log("translation: " + JSON.stringify(translation))
+    let uri = `${process.env.SIGNPOST_API_URL}/provider-categories/translations`;
+    let requestData = {
+        method: 'POST',
+        uri,
+        headers: {
+            'Content-Type': "application/json"
+        },
+        json: true,
+        body: {
+            slug: resource,
+            language: language,
+            name: translation.data[0].attributes.strings.other,
+            description: translation.data[1] ? translation.data[1].attributes.strings.other : null,
+        }
+    };
+    console.log("requestData: " + JSON.stringify(requestData))
+    request(requestData, (e, r, b) => {
+        if (e) {
+            console.log("updateServiceInCMS -> Error: ", e)
+        }
+        console.log("updateServiceInCMS -> response: ", r)
+        callback(e, r, b)
+    })
+}
+
+function updateServiceCategoryInCMS(resource, language, translation, callback) {
+    console.log("translation: " + JSON.stringify(translation))
+    let uri = `${process.env.SIGNPOST_API_URL}/service-categories/translations`;
+    let requestData = {
+        method: 'POST',
+        uri,
+        headers: {
+            'Content-Type': "application/json"
+        },
+        json: true,
+        body: {
+            slug: resource,
+            language: language,
+            name: translation.data[0].attributes.strings.other,
+            description: translation.data[1] ? translation.data[1].attributes.strings.other : null,
+        }
+    };
+    console.log("requestData: " + JSON.stringify(requestData))
+    request(requestData, (e, r, b) => {
+        if (e) {
+            console.log("updateServiceInCMS -> Error: ", e)
+        }
+        console.log("updateServiceInCMS -> response: ", r)
+        callback(e, r, b)
+    })
+}
+
+function updateProviderInCMS(resource, language, translation, callback) {
+    console.log("translation: " + JSON.stringify(translation))
+    let uri = `${process.env.SIGNPOST_API_URL}/providers/translations`;
+    let requestData = {
+        method: 'POST',
+        uri,
+        headers: {
+            'Content-Type': "application/json"
+        },
+        json: true,
+        body: {
+            slug: resource,
+            language: language,
+            name: translation.data[0].attributes.strings.other,
+            description: translation.data[1] ? translation.data[1].attributes.strings.other : null,
+        }
+    };
+    console.log("requestData: " + JSON.stringify(requestData))
+    request(requestData, (e, r, b) => {
+        if (e) {
+            console.log("updateServiceInCMS -> Error: ", e)
+        }
+        console.log("updateServiceInCMS -> response: ", r)
+        callback(e, r, b)
     })
 }

@@ -12,4 +12,10 @@ module.exports = {
 		"ktglofo8nf88": "en",
 		"1q5uqv62m69g": "en",
 	},
+	signpostEntityPrefixes: {
+		services: 'serv',
+		providers: 'prov',
+		serviceCategories: 'scat',
+		providerCategories: 'pcat'
+	}
 };
