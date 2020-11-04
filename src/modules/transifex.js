@@ -118,8 +118,10 @@ module.exports = function (req, res) {
         case "translation_completed":
             transifexUtils.getResourceTranslation(project, resource, language).then(t => {
 
-                //Check if transifex project needs to update Contentfull:
-                if (project == process.env.TRANSIFEX_PROJECT_SLUG_CONTENTFUL) {
+                //Check if transifex project needs to update Contentful:
+                if (    project === process.env.TRANSIFEX_PROJECT_SLUG_CONTENTFUL
+                        || project.includes("contentful")
+                    ) {
 
                     //Update Contentful with the new translation
                     let spaceId = transifexToSpaceDictionary[project];
