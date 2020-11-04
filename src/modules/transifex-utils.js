@@ -12,6 +12,8 @@ const md = new Remarkable("full", {
     breaks: true,
 });
 
+const TRANSIFEX_ORGANIZATION_SLUG = process.env.TRANSIFEX_ORGANIZATION_SLUG
+
 function generateContentForTransifex(article) {
     let {
         lead,
@@ -19,7 +21,7 @@ function generateContentForTransifex(article) {
         content
     } = article;
     lead = lead ? cleanUpHTML(md.render(lead)) : '';
-    content = lead ? cleanUpHTML(md.render(content)): '';
+    content = lead ? cleanUpHTML(md.render(content)) : '';
 
     let body = `<html><body><div class="title">${title}</div><div class="subtitle">${lead}</div>${content}</body></html>`;
 
@@ -35,7 +37,7 @@ function unicodeEscape(str) {
         }
         return '&#' + ('x') + ('0000' + escape).slice(longhand ? -4 : -2) + ';';
     });
-    console.log("unicodeEscape: " + ret);
+    //console.log("unicodeEscape: " + ret);
     return ret;
 }
 
@@ -51,7 +53,7 @@ function getTransifexResourceBySlug(project, slug, callback) {
     //console.log("options", options);
     request(options, function (error, response) {
         if (error) throw new Error(error);
-        //console.log(response.body);
+        console.log(response.body);
         callback(error, response)
     });
 }
@@ -86,10 +88,10 @@ function createTransifexResource(project, payload, callback) {
             })
 
     };
-    console.log("options: " + JSON.stringify(options))
+    //console.log("options: " + JSON.stringify(options))
     request(options, function (error, response) {
         if (error) throw new Error(error);
-        console.log(response.body);
+        //console.log(response.body);
         callback(error, response)
     });
 }
@@ -98,7 +100,6 @@ function uploadTransifexResourceFile(project, slug, content, callback) {
     if (project == null) {
         project = process.env.TRANSIFEX_PROJECT_SLUG
     }
-    var request = require('request');
     var options = {
         method: 'POST',
         url: `${process.env.TRANSIFEX_API_URL_v3}/resource_strings_async_uploads`,
@@ -126,11 +127,32 @@ function uploadTransifexResourceFile(project, slug, content, callback) {
             })
 
     };
-    console.log("uploadTransifexResourceFile -> options: " + JSON.stringify(options))
+    //console.log("uploadTransifexResourceFile -> options: " + JSON.stringify(options))
     request(options, function (error, response) {
         if (error) throw new Error(error);
-        //console.log("uploadTransifexResourceFile -> response: " + response.body);
+        console.log("uploadTransifexResourceFile -> response: " + response.body);
         callback(error, response)
+    });
+}
+
+function getResourceTranslation(project, key, l) {
+    var options = {
+        method: 'GET',
+        url: `${process.env.TRANSIFEX_API_URL_v3}/resource_translations?filter[resource]=o:${TRANSIFEX_ORGANIZATION_SLUG}:p:${project}:r:${key}&filter[language]=l:${l}`,
+        headers: {
+            'Content-Type': 'application/vnd.api+json',
+            'Authorization': 'Bearer ' + process.env.TRANSIFEX_API_TOKEN
+
+        },
+    };
+    console.log("getResourceTranslation -> options: " + JSON.stringify(options))
+    return new Promise((resolve, reject) => {
+        request(options, function (error, response, body) {
+            if (error) return reject(error);
+            console.log("getResourceTranslation -> response: " + body);
+            return resolve(JSON.parse(body))
+        });
+
     });
 }
 
@@ -140,4 +162,5 @@ module.exports = {
     , getTransifexResourceBySlug
     , createTransifexResource
     , uploadTransifexResourceFile
+    , getResourceTranslation
 }

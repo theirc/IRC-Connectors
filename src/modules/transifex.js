@@ -4,6 +4,9 @@ const _ = require("lodash");
 const request = require("request");
 const cheerio = require("cheerio");
 const contentful = require("contentful-management");
+const transifexUtils = require('./transifex-utils');
+
+const hookData = require('./example hook.json')
 
 require('dotenv').config();
 
@@ -17,33 +20,11 @@ const {
 const toMarkdown = require("to-markdown");
 const contentfulManagement = require("contentful-management");
 
-const TRANSIFEX_API_TOKEN = process.env.TRANSIFEX_API_TOKEN;
 const CONTENTFUL_API_TOKEN = process.env.CONTENTFUL_API_TOKEN;
 
 const client = contentfulManagement.createClient({
     accessToken: CONTENTFUL_API_TOKEN,
 });
-
-function getResourceTranslation(project, key, l) {
-    return new Promise((resolve, reject) => {
-        request
-            /*------- API v3 -----*/
-            .get(`${process.env.TRANSIFEX_API_URL_v3}/resource_translations?filter[resource]=o:${project}:p:${project}:r:${key}&filter[language]=l:${l}`, (e, r, b) => {
-                if (e) {
-                    reject(e);
-                    return;
-                }
-                try {
-                    resolve(JSON.parse(b));
-                } catch (e) {
-                    //reject(e);
-                    console.log("Error", b);
-                    reject(null);
-                }
-            })
-            .oauth('Authorization: Bearer ', TRANSIFEX_API_TOKEN, false)
-    });
-}
 
 function transformIncomingText(content) {
     // Closing self closing tags
@@ -135,7 +116,7 @@ module.exports = function (req, res) {
     switch (event) {
         case "review_completed":
         case "translation_completed":
-            getResourceTranslation(project, resource, language).then(t => {
+            transifexUtils.getResourceTranslation(project, resource, language).then(t => {
 
                 //Check if transifex project needs to update Contentfull:
                 if (project != process.env.TRANSIFEX_PROJECT_SLUG_SERVICES) {
@@ -190,7 +171,9 @@ module.exports = function (req, res) {
                                             }
                                         });
                                 })
-                        ).then(() => console.log("Success"));
+                        ).then(() => {
+                            console.log("Success")
+                        });
                     } else {
                         let payload = transformIncomingText(t.content);
                         let contentType = "article";
@@ -202,12 +185,14 @@ module.exports = function (req, res) {
                         }
 
 
-                        updateContentful(spaceId, slug, language, payload, contentType).then(p => { });
+                        updateContentful(spaceId, slug, language, payload, contentType).then(p => { 
+
+                        });
                     }
                 }
                 //Update Service in the database with the new translation
                 else {
-                    updateServiceInCMS(resource, language, (e, r, b) => {
+                    updateServiceInCMS(resource, language, t, (e, r, b) => {
 
                     });
                 }
@@ -221,35 +206,30 @@ module.exports = function (req, res) {
     res.sendStatus(200);
 };
 
-function updateServiceInCMS(resource, language, callback) {
-    //TO DO: integrate function with Signpost CMS
-    /*
+function updateServiceInCMS(resource, language, translation, callback) {
+    console.log("translation: " + JSON.stringify(translation))
     let uri = `${process.env.SIGNPOST_API_URL}/`;
     let requestData = {
-        method: 'PUT',
+        method: 'POST',
         uri,
         headers: {
-            'Content-Type': "application/vnd.api+json"
-            ,'Authorization': 'Bearer ' + process.env.TRANSIFEX_API_TOKEN,
+            'Content-Type': "application/json"
         },
         json: true,
         body: {
-            data: {
-                attributes: payload,
-                relationships: {
-                    project: {
-                        data: {
-                            id: "o:" + process.env.TRANSIFEX_ORGANIZATION_SLUG + ":p:" + project,
-                            type: "projects"
-                        }
-                    }
-                },
-                type: "resources"
-            }
+            slug: resource,
+            language: language,
+            name: translation.data[0].attributes.strings.other,
+            additionalInformation: translation.data[1].attributes.strings.other,
+            description: translation.data[2].attributes.strings.other,
         }
     };
     console.log("requestData: " + JSON.stringify(requestData))
-
-    request(requestData, (e, r, b) => { callback(e, r, b) })
-    */
+    request(requestData, (e, r, b) => { 
+        if(e){
+            console.log("updateServiceInCMS -> Error: ", e)
+        }
+        console.log("updateServiceInCMS -> response: ", r)
+        callback(e, r, b) 
+    })
 }

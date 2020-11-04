@@ -55,7 +55,7 @@ module.exports = function (req, res) {
                         }
                         if (r1.statusCode > 201) {
                             //upload error to Slack
-                            console.log('Error', payload.slug);
+                            console.log('upload error to Slack Error', payload.slug);
                             request({
                                 method: 'post',
                                 uri: 'https://hooks.slack.com/services/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',
@@ -136,7 +136,7 @@ module.exports = function (req, res) {
                 })
                 .catch(e => {
                     //console.log("Error", e)
-                    return res.status(500).send({message: 'Error en catch', error: e});
+                    return res.status(500).send({message: 'Error en catch 1', error: e});
                 })
         } else if (r.statusCode === 200) {
             console.log("Resource already exists in Transifex");
@@ -198,7 +198,7 @@ module.exports = function (req, res) {
                 })
                 .catch(e => {
                     console.log({message: 'Error en catch', error: e});
-                    return res.status(500).send({message: 'Error en catch', error: e});
+                    return res.status(500).send({message: 'Error en catch 2', error: e});
                 });
         } else {
             //console.log("An error ocurred", __e, r)
