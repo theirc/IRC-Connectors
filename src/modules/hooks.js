@@ -1,5 +1,5 @@
 const facebook = require('./facebook');
-const contentful = require('./contentful-v3');
+const contentful = require('./contentful');
 const transifex = require('./transifex');
 const signpost = require('./signpost');
 
