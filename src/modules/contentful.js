@@ -377,6 +377,7 @@ function uploadCategoriesToTransifex(client, spaceId) {
  *
  */
 module.exports = function (req, res) {
+    console.log('Hook for contentful');
     switch (req.headers["x-contentful-topic"]) {
         case "ContentManagement.Entry.publish":
             const spaceId = req.body.sys.space.sys.id;

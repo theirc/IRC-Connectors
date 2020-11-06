@@ -50,11 +50,14 @@ function getTransifexResourceBySlug(project, slug, callback) {
             'Cookie': 'AWSALB=pF31Pi+kG1MKxAfaW9mjX71drgBzk5is4w/4rSPeMYnl4Cd7eC0Dm3w6PiFXMYVdFEVb+6UAZYpA1mZmoCj730fGjAsGGWM94ngp1xROolV3oVUPBTaNU46EYy9A; AWSALBCORS=pF31Pi+kG1MKxAfaW9mjX71drgBzk5is4w/4rSPeMYnl4Cd7eC0Dm3w6PiFXMYVdFEVb+6UAZYpA1mZmoCj730fGjAsGGWM94ngp1xROolV3oVUPBTaNU46EYy9A'
         }
     };
-    //console.log("options", options);
-    request(options, function (error, response) {
-        if (error) throw new Error(error);
+    console.log("options", options);
+    request(options, function (error, response, body) {
+        if (error) {
+            console.log(error);
+            throw new Error(error);
+        }
         console.log(response.body);
-        callback(error, response)
+        callback(error, response, body)
     });
 }
 
@@ -88,10 +91,13 @@ function createTransifexResource(project, payload, callback) {
             })
 
     };
-    //console.log("options: " + JSON.stringify(options))
+    console.log("options: " + JSON.stringify(options))
     request(options, function (error, response) {
-        if (error) throw new Error(error);
-        //console.log(response.body);
+        if (error) {
+            console.log(error);
+            throw new Error(error);
+        }
+        console.log(response.body);
         callback(error, response)
     });
 }
@@ -127,9 +133,12 @@ function uploadTransifexResourceFile(project, slug, content, callback) {
             })
 
     };
-    //console.log("uploadTransifexResourceFile -> options: " + JSON.stringify(options))
+    console.log("uploadTransifexResourceFile -> options: " + JSON.stringify(options))
     request(options, function (error, response) {
-        if (error) throw new Error(error);
+        if (error) {
+            console.log(error);
+            throw new Error(error);
+        }
         console.log("uploadTransifexResourceFile -> response: " + response.body);
         callback(error, response)
     });
@@ -148,7 +157,10 @@ function getResourceTranslation(project, key, l) {
     console.log("getResourceTranslation -> options: " + JSON.stringify(options))
     return new Promise((resolve, reject) => {
         request(options, function (error, response, body) {
-            if (error) return reject(error);
+            if (error) {
+                console.log(error);
+                return reject(error);
+            }
             console.log("getResourceTranslation -> response: " + body);
             return resolve(JSON.parse(body))
         });

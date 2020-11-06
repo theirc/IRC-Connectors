@@ -75,73 +75,113 @@ function importArticleAndVideo(req, space) {
 
         let payload = {
             slug,
-            content: transifexUtils.unicodeEscape(content),
             name: title,
             i18n_type: "XHTML",
-            accept_translations: "true",
+            accept_translations: true,
             categories: item.fields.country && item.fields.country.fields && item.fields.country.fields.slug ? [item.fields.country.fields.slug] : null,
         };
 
-        let promise = new Promise((resolve, reject) => {
-            request
-                //get Transifex article by slug
-                /*------ Get resource API v3 -------*/
-                .get(`${process.env.TRANSIFEX_API_URL_v3}/resources/o:${TRANSIFEX_ORGANIZATION_SLUG}p:${project}r:${slug}/`, (__e, r, __b) => {
-                    if (r.statusCode === 404) {
-                        //if article doesn't exists, create it, else update it:
-                        transifexUtils.createTransifexResource(
-                            project,                                //project
-                            payload,                                //payload
-                            (e1, r1, b1) => {
-                                if (e1) {
-                                    reject(e1);
-                                }
-                                if (r1.statusCode > 201) {
-                                    //upload error to Slack
-                                    console.log('Error', payload.slug);
-                                    request({
-                                        method: 'post',
-                                        uri: 'https://hooks.slack.com/services/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',
-                                        headers: {
-                                            ContentType: "application/json",
-                                        },
-                                        json: true,
-                                        body: {
-                                            text: `*TRANSIFEX UPLOAD ERROR*\nArticle with slug ${payload.slug}, failed to upload to transifex.\nResponse from transifex servers: ${b1}.`,
-                                            attachments: [{
-                                                title: 'What went to transifex',
-                                                text: JSON.stringify(payload)
-                                            }]
-                                        }
-                                    }, () => {
-                                        console.log('Hooked')
-                                    })
+        let _content = transifexUtils.unicodeEscape(content);
 
-                                    reject(e);
-                                    return;
-                                }
-                                else {
-                                    request({
-                                        method: 'post',
-                                        headers: {
-                                            ContentType: "application/json",
-                                        },
-                                        json: true,
-                                        uri: 'https://hooks.slack.com/services/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',
-                                        body: {
-                                            text: `Hi! I just uploaded ${payload.slug} successfully to transifex.`
-                                        }
-                                    }, () => {
-                                        console.log('Success Hooked')
-                                    })
-                                }
+
+        let promise = new Promise((resolve, reject) => {
+            transifexUtils.getTransifexResourceBySlug(project, slug, (e,r,b) => {
+                if (r.statusCode === 404) {
+                    //if article doesn't exists, create it, else update it:
+                    transifexUtils.createTransifexResource(
+                        project,                                //project
+                        payload,                                //payload
+                        (e1, r1, b1) => {
+                            if (e1) {
+                                reject(e1);
                             }
-                        );
+                            if (r1.statusCode > 201) {
+                                //upload error to Slack
+                                console.log('Error', payload.slug);
+                                request({
+                                    method: 'post',
+                                    uri: 'https://hooks.slack.com/services/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',
+                                    headers: {
+                                        ContentType: "application/json",
+                                    },
+                                    json: true,
+                                    body: {
+                                        text: `*TRANSIFEX UPLOAD ERROR*\nArticle with slug ${payload.slug}, failed to upload to transifex.\nResponse from transifex servers: ${b1}.`,
+                                        attachments: [{
+                                            title: 'What went to transifex',
+                                            text: JSON.stringify(payload)
+                                        }]
+                                    }
+                                }, () => {
+                                    console.log('Hooked')
+                                })
+
+                                reject(e);
+                                return;
+                            }
+                            else {
+                                request({
+                                    method: 'post',
+                                    headers: {
+                                        ContentType: "application/json",
+                                    },
+                                    json: true,
+                                    uri: 'https://hooks.slack.com/services/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',
+                                    body: {
+                                        text: `Hi! I just uploaded ${payload.slug} successfully to transifex.`
+                                    }
+                                }, () => {
+                                    console.log('Success Hooked')
+                                })
+                            }
+                        }
+                    );
+                } 
+                transifexUtils.uploadTransifexResourceFile(project, slug, _content, (e1, r1, b1) => {
+                    if (e1) {
+                        reject(e1);
+                    }
+                    if (r1.statusCode > 201) {
+                        //upload error to Slack
+                        console.log('Error', payload.slug);
+                        request({
+                            method: 'post',
+                            uri: 'https://hooks.slack.com/services/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',
+                            headers: {
+                                ContentType: "application/json",
+                            },
+                            json: true,
+                            body: {
+                                text: `*TRANSIFEX UPLOAD ERROR*\nArticle with slug ${payload.slug}, failed to upload to transifex.\nResponse from transifex servers: ${b1}.`,
+                                attachments: [{
+                                    title: 'What went to transifex',
+                                    text: JSON.stringify(payload)
+                                }]
+                            }
+                        }, () => {
+                            console.log('Hooked')
+                        })
+                        reject(e);
+                        return;
+                    }
+                    else {
+                        request({
+                            method: 'post',
+                            headers: {
+                                ContentType: "application/json",
+                            },
+                            json: true,
+                            uri: 'https://hooks.slack.com/services/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',
+                            body: {
+                                text: `Hi! I just uploaded ${payload.slug} successfully to transifex.`
+                            }
+                        }, () => {
+                            console.log('Success Hooked')
+                        })
                     }
                 })
-                .oauth('Authorization: Bearer ', TRANSIFEX_API_TOKEN, false)
+            })
         });
-
         promise
             .then(() => {
                 console.log("Success");
@@ -230,7 +270,7 @@ function uploadCategoriesToTransifex(client, spaceId) {
             slug,
             name: "Category Names And Descriptions",
             i18n_type: "KEYVALUEJSON",
-            accept_translations: "true",
+            accept_translations: true,
         };
 
         let content = JSON.stringify(categoryDictionary);
@@ -272,6 +312,7 @@ function uploadCategoriesToTransifex(client, spaceId) {
  *
  */
 module.exports = function (req, res) {
+    console.log('Hook for contentful-v3');
     switch (req.headers["x-contentful-topic"]) {
         case "ContentManagement.Entry.publish":
             const spaceId = req.body.sys.space.sys.id;
