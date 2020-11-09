@@ -168,6 +168,26 @@ function getResourceTranslation(project, key, l) {
     });
 }
 
+function getTransifexTranslationStatus(project, slug, callback) {
+    var options = {
+        'method': 'GET',
+        'url': `${process.env.TRANSIFEX_API_URL_v3}/resource_language_stats?filter[project]=o:${process.env.TRANSIFEX_ORGANIZATION_SLUG}:p:${project}&filter[resource]=o:${process.env.TRANSIFEX_ORGANIZATION_SLUG}:p:${project}:r:${slug}`,
+        'headers': {
+            'Authorization': 'Bearer ' + process.env.TRANSIFEX_API_TOKEN,
+            'Cookie': 'AWSALB=pF31Pi+kG1MKxAfaW9mjX71drgBzk5is4w/4rSPeMYnl4Cd7eC0Dm3w6PiFXMYVdFEVb+6UAZYpA1mZmoCj730fGjAsGGWM94ngp1xROolV3oVUPBTaNU46EYy9A; AWSALBCORS=pF31Pi+kG1MKxAfaW9mjX71drgBzk5is4w/4rSPeMYnl4Cd7eC0Dm3w6PiFXMYVdFEVb+6UAZYpA1mZmoCj730fGjAsGGWM94ngp1xROolV3oVUPBTaNU46EYy9A'
+        }
+    };
+    console.log("options", options);
+    request(options, function (error, response, body) {
+        if (error) {
+            console.log(error);
+            throw new Error(error);
+        }
+        console.log(response.body);
+        callback(error, response, body)
+    });
+}
+
 module.exports = {
     generateContentForTransifex
     , unicodeEscape
@@ -175,4 +195,5 @@ module.exports = {
     , createTransifexResource
     , uploadTransifexResourceFile
     , getResourceTranslation
+    , getTransifexTranslationStatus
 }

@@ -3,8 +3,6 @@ const request = require("request");
 
 const transifexUtils = require('./transifex-utils');
 
-const TRANSIFEX_API_TOKEN = process.env.TRANSIFEX_API_TOKEN;
-//const project = process.env.TRANSIFEX_PROJECT_SLUG_SERVICES;
 const project = process.env.TRANSIFEX_PROJECT_SLUG_SERVICES;
 
 
