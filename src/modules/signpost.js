@@ -30,7 +30,7 @@ module.exports = function (req, res) {
     let payload = {
         slug: service.slug,
         name: service.name,
-        i18n_type: "XHTML",
+        i18n_type: "HTML",
         accept_translations: true,
         categories: service.categories
     };

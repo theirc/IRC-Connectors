@@ -79,7 +79,6 @@ function createTransifexResource(project, payload, callback) {
             'Authorization': 'Bearer ' + process.env.TRANSIFEX_API_TOKEN
 
         },
-        //body: "{\r\n    \"data\": {\r\n        \"attributes\": {\r\n            \"slug\": \"test-leo-3\",\r\n            \"name\": \"Test Leo 3\",\r\n            \"i18n_type\": \"XHTML\"\r\n        },\r\n        \"relationships\": {\r\n            \"project\": {\r\n                \"data\": {\r\n                    \"id\": \"o:refugeeinfo:p:refugeeinfo-staging\",\r\n                    \"type\": \"projects\"\r\n                }\r\n            }\r\n        },\r\n        \"type\": \"resources\"\r\n    }\r\n}"
         body:
             JSON.stringify({
                 data: {
