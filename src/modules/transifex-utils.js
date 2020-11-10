@@ -15,11 +15,16 @@ const md = new Remarkable("full", {
 const TRANSIFEX_ORGANIZATION_SLUG = process.env.TRANSIFEX_ORGANIZATION_SLUG
 
 function generateContentForTransifex(article) {
-    let {
-        lead,
-        title,
-        content
-    } = article;
+    let lead, title, content;
+    if (article.title) {
+        lead = article.lead
+            , title = article.title
+            , content = article.content
+    } else {
+        lead = article.fields.lead
+            , title = article.fields.title
+            , content = article.fields.content
+    }
     lead = lead ? cleanUpHTML(md.render(lead)) : '';
     content = lead ? cleanUpHTML(md.render(content)) : '';
 
