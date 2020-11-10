@@ -6,7 +6,7 @@ const cheerio = require("cheerio");
 const contentful = require("contentful-management");
 const transifexUtils = require('./transifex-utils');
 
-const {signpostEntityPrefixes} = require("../config");
+const { signpostEntityPrefixes } = require("../config");
 
 require('dotenv').config();
 
@@ -119,9 +119,9 @@ module.exports = function (req, res) {
             transifexUtils.getResourceTranslation(project, resource, language).then(t => {
 
                 //Check if transifex project needs to update Contentful:
-                if (    project === process.env.TRANSIFEX_PROJECT_SLUG_CONTENTFUL
-                        || project.includes("contentful")
-                    ) {
+                if (project === process.env.TRANSIFEX_PROJECT_SLUG_CONTENTFUL
+                    || project.includes("contentful")
+                ) {
 
                     //Update Contentful with the new translation
                     let spaceId = transifexToSpaceDictionary[project];
@@ -177,14 +177,17 @@ module.exports = function (req, res) {
                             console.log("Success")
                         });
                     } else {
-                        let payload = transformIncomingText(t.content);
+                        //console.log("t->transformIncomingText: " + JSON.stringify(t))
+                        //let payload = transformIncomingText(t.content);
+                        let payload = {
+                            title: t.data[0].attributes.strings.other,
+                            lead: t.data[1].attributes.strings.other,
+                            content: ''
+                        };
+                        for (let i = 2; i < t.data.length; i++) {
+                            payload.content += t.data[i].attributes.strings.other + '<br>'
+                        };
                         let contentType = "article";
-                        if (slug.indexOf("---") > 0) {
-                            const slugParts = slug.split("---");
-
-                            slug = slugParts[1];
-                            contentType = slugParts[0];
-                        }
                         updateContentful(spaceId, slug, language, payload, contentType).then(p => {
 
                         });
@@ -192,7 +195,7 @@ module.exports = function (req, res) {
                 }
                 else {
                     //Update Entity in the database with the new translation, based in the slug entity prefix
-                    let entityPrefix = resource.substr(0,4);
+                    let entityPrefix = resource.substr(0, 4);
                     switch (entityPrefix) {
                         case signpostEntityPrefixes.services:
                             updateServiceInCMS(resource, language, t, (e, r, b) => { });

@@ -12,8 +12,6 @@ const md = new Remarkable("full", {
     breaks: true,
 });
 
-const TRANSIFEX_ORGANIZATION_SLUG = process.env.TRANSIFEX_ORGANIZATION_SLUG
-
 function generateContentForTransifex(article) {
     let lead, title, content;
     if (article.title) {
@@ -151,7 +149,7 @@ function uploadTransifexResourceFile(project, slug, content, callback) {
 function getResourceTranslation(project, key, l) {
     var options = {
         method: 'GET',
-        url: `${process.env.TRANSIFEX_API_URL_v3}/resource_translations?filter[resource]=o:${TRANSIFEX_ORGANIZATION_SLUG}:p:${project}:r:${key}&filter[language]=l:${l}`,
+        url: `${process.env.TRANSIFEX_API_URL_v3}/resource_translations?filter[resource]=o:${process.env.TRANSIFEX_ORGANIZATION_SLUG}:p:${project}:r:${key}&filter[language]=l:${l}`,
         headers: {
             'Content-Type': 'application/vnd.api+json',
             'Authorization': 'Bearer ' + process.env.TRANSIFEX_API_TOKEN
