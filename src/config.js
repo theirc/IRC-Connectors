@@ -4,6 +4,10 @@ module.exports = {
 		"refugeeinfo-staging": "1q5uqv62m69g",
 		//"refugeeinfo-staging" : "jr1l80tm3vzp",
 	},
+	contenfulCountryToTransifexProject: {
+		'3yjEey2fIAIOCou8WCAKAY': 'refugeeinfo-italy-contentful',
+
+	},
 	contenfulLanguageDictionary: {
 		ar: "ar-001",
 		fa: "fa-AF",

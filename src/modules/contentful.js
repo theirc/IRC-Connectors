@@ -21,16 +21,13 @@ const md = new Remarkable("full", {
     breaks: true,
 });
 
-const TRANSIFEX_API_TOKEN = process.env.TRANSIFEX_API_TOKEN;
-const TRANSIFEX_ORGANIZATION_SLUG = process.env.TRANSIFEX_ORGANIZATION_SLUG;
 const CONTENTFUL_API_TOKEN = process.env.CONTENTFUL_API_TOKEN;
-const TRANSIFEX_API_URL = process.env.TRANSIFEX_API_URL_v3;
-const TRANSIFEX_NEW_API_URL = process.env.TRANSIFEX_NEW_API_URL_v3;
 
 let {
     transifexToSpaceDictionary,
     contenfulLanguageDictionary,
-    contentfulPrimaryLanguage
+    contentfulPrimaryLanguage,
+    contenfulCountryToTransifexProject,
 } = require("../config");
 
 const mgmtClient = contentfulManagement.createClient({
@@ -44,9 +41,13 @@ function importArticleAndVideo(req, space) {
         body
     } = req;
     const spaceId = body.sys.space.sys.id;
+    const countryId = body.fields.country['en-US'].sys.id
     let locale = contentfulPrimaryLanguage[spaceId] ?
         contenfulLanguageDictionary[contentfulPrimaryLanguage[spaceId]] : "en";
     let project = transifexToSpaceDictionary[spaceId];
+    // Each country has now a separated project:
+    let countryProject = contenfulCountryToTransifexProject[countryId] ? 
+        contenfulCountryToTransifexProject[countryId] : project
 
     // space.getApiKeys().then(k => {
     //     console.log("Uploading " + body.fields.slug["en-US"] + " to Transifex");
