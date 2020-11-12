@@ -45,9 +45,11 @@ function importArticleAndVideo(req, space) {
     let locale = contentfulPrimaryLanguage[spaceId] ?
         contenfulLanguageDictionary[contentfulPrimaryLanguage[spaceId]] : "en";
     let project = transifexToSpaceDictionary[spaceId];
+    
     // Each country has now a separated project:
     let countryProject = contenfulCountryToTransifexProject[countryId] ? 
         contenfulCountryToTransifexProject[countryId] : project
+    countryProject = project; //UNCOMMENT THIS WHEN READY TO PROD.
 
     // space.getApiKeys().then(k => {
     //     console.log("Uploading " + body.fields.slug["en-US"] + " to Transifex");

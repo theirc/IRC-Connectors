@@ -14,17 +14,15 @@ const md = new Remarkable("full", {
 
 function generateContentForTransifex(article) {
     let lead, title, content;
-    if (article.title) {
-        lead = article.lead
-            , title = article.title
-            , content = article.content
-    } else {
-        lead = article.fields.lead
-            , title = article.fields.title
-            , content = article.fields.content
-    }
-    lead = lead ? cleanUpHTML(md.render(lead)) : '';
-    content = lead ? cleanUpHTML(md.render(content)) : '';
+    let _article;
+    //the data can come inside article, or article.fields:
+    if (!article.title)
+        _article = article.fields
+    else
+        _article = article
+    title = _article.title ? _article.title : ''
+    lead = _article.lead ? cleanUpHTML(md.render(_article.lead)) : '';
+    content = _article.content ? cleanUpHTML(md.render(_article.content)) : '';
 
     let body = `<html><body><div class="title">${title}</div><div class="subtitle">${lead}</div>${content}</body></html>`;
 
