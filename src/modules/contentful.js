@@ -292,8 +292,12 @@ function importCountry(req, space) {
 function uploadCategoriesToTransifex(client, spaceId) {
     let locale = contentfulPrimaryLanguage[spaceId] ? contenfulLanguageDictionary[contentfulPrimaryLanguage[spaceId]] : "en";
     let project = transifexToSpaceDictionary[spaceId];
+
+    // Each country has now a separated project:
     let countryProject = contenfulCountryToTransifexProject[countryId] ? 
         contenfulCountryToTransifexProject[countryId] : project
+    countryProject = project; //UNCOMMENT THIS WHEN READY TO PROD.
+    
     client.getEntries({
         limit: 1e3,
         content_type: "category",
