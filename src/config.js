@@ -1,4 +1,5 @@
 module.exports = {
+	defaultContentfulSpace: "ktglofo8nf88",
 	transifexToSpaceDictionary: {
 		"refugeeinfo-refresh": "ktglofo8nf88",
 		"refugeeinfo-staging": "1q5uqv62m69g",

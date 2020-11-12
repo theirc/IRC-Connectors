@@ -15,7 +15,8 @@ const {
 } = require("./utils");
 const {
     transifexToSpaceDictionary,
-    contenfulLanguageDictionary
+    contenfulLanguageDictionary,
+    defaultContentfulSpace
 } = require("../config");
 const toMarkdown = require("to-markdown");
 const contentfulManagement = require("contentful-management");
@@ -124,7 +125,7 @@ module.exports = function (req, res) {
                 ) {
 
                     //Update Contentful with the new translation
-                    let spaceId = transifexToSpaceDictionary[project];
+                    let spaceId = transifexToSpaceDictionary[project] ? transifexToSpaceDictionary[project] : defaultContentfulSpace;
                     let slug = resource.replace(/html$/, "");
                     console.log(slug);
                     if (slug === "category-names") {
@@ -180,12 +181,12 @@ module.exports = function (req, res) {
                         //console.log("t->transformIncomingText: " + JSON.stringify(t))
                         //let payload = transformIncomingText(t.content);
                         let payload = {
-                            title: t.data[0].attributes.strings.other,
-                            lead: t.data[1].attributes.strings.other,
+                            title: t.data[0].attributes.strings? t.data[0].attributes.strings.other : '',
+                            lead: t.data[1].attributes.strings? t.data[1].attributes.strings.other : '',
                             content: ''
                         };
                         for (let i = 2; i < t.data.length; i++) {
-                            payload.content += t.data[i].attributes.strings.other + '<br>'
+                            payload.content += '<p>' + t.data[i].attributes.strings? t.data[i].attributes.strings.other + '</p>' : '';
                         };
                         let contentType = "article";
                         updateContentful(spaceId, slug, language, payload, contentType).then(p => {

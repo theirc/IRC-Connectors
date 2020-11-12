@@ -87,11 +87,11 @@ function importArticleAndVideo(req, space) {
         let _content = transifexUtils.unicodeEscape(content);
 
         let promise = new Promise((resolve, reject) => {
-            transifexUtils.getTransifexResourceBySlug(project, slug, (e, r, b) => {
+            transifexUtils.getTransifexResourceBySlug(countryProject, slug, (e, r, b) => {
                 if (r.statusCode === 404) {
                     //if article doesn't exists, create it, else update it:
                     transifexUtils.createTransifexResource(
-                        project,                                //project
+                        countryProject,                                //project
                         payload,                                //payload
                         (e1, r1, b1) => {
                             if (e1) {
@@ -122,7 +122,7 @@ function importArticleAndVideo(req, space) {
                                 return;
                             }
                             else {
-                                transifexUtils.uploadTransifexResourceFile(project, slug, _content, (e1, r1, b1) => {
+                                transifexUtils.uploadTransifexResourceFile(countryProject, slug, _content, (e1, r1, b1) => {
                                     if (e1) {
                                         reject(e1);
                                     }
@@ -171,7 +171,7 @@ function importArticleAndVideo(req, space) {
                         }
                     );
                 } else {
-                    transifexUtils.uploadTransifexResourceFile(project, slug, _content, (e1, r1, b1) => {
+                    transifexUtils.uploadTransifexResourceFile(countryProject, slug, _content, (e1, r1, b1) => {
                         if (e1) {
                             reject(e1);
                         }
@@ -290,6 +290,8 @@ function importCountry(req, space) {
 function uploadCategoriesToTransifex(client, spaceId) {
     let locale = contentfulPrimaryLanguage[spaceId] ? contenfulLanguageDictionary[contentfulPrimaryLanguage[spaceId]] : "en";
     let project = transifexToSpaceDictionary[spaceId];
+    let countryProject = contenfulCountryToTransifexProject[countryId] ? 
+        contenfulCountryToTransifexProject[countryId] : project
     client.getEntries({
         limit: 1e3,
         content_type: "category",
@@ -311,18 +313,18 @@ function uploadCategoriesToTransifex(client, spaceId) {
 
         let content = JSON.stringify(categoryDictionary);
 
-        transifexUtils.getTransifexResourceBySlug(project, slug, (e, r) => {
+        transifexUtils.getTransifexResourceBySlug(countryProject, slug, (e, r) => {
             if (e) {
                 console.log("getTransifexResourceBySlug Error: ", e);
             }
             //Revisar response a ver si el recurso ya existe
             if (r.statusCode === 404) {
                 //Si no existe crearlo y subirle el Resource file
-                transifexUtils.createTransifexResource(project, payload, (e, r) => {
+                transifexUtils.createTransifexResource(countryProject, payload, (e, r) => {
                     if (e) {
                         console.log("createTransifexResource Error: " + e);
                     }
-                    transifexUtils.uploadTransifexResourceFile(project, slug, content, (e, r) => {
+                    transifexUtils.uploadTransifexResourceFile(countryProject, slug, content, (e, r) => {
                         if (e) {
                             console.log("createTransifexResource Error: " + e);
                         }
@@ -331,7 +333,7 @@ function uploadCategoriesToTransifex(client, spaceId) {
                 })
             } else {
                 //Si existe subirle el Resource file
-                transifexUtils.uploadTransifexResourceFile(project, slug, content, (e, r) => {
+                transifexUtils.uploadTransifexResourceFile(countryProject, slug, content, (e, r) => {
                     if (e) {
                         console.log("createTransifexResource Error: " + e);
                     }
