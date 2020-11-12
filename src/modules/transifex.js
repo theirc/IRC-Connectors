@@ -186,7 +186,8 @@ module.exports = function (req, res) {
                             content: ''
                         };
                         for (let i = 2; i < t.data.length; i++) {
-                            payload.content += '<p>' + t.data[i].attributes.strings? t.data[i].attributes.strings.other + '</p>' : '';
+                            if(t.data[i].attributes.strings && t.data[i].attributes.strings.other)
+                                payload.content += '<p>' + t.data[i].attributes.strings.other + '</p>';
                         };
                         let contentType = "article";
                         updateContentful(spaceId, slug, language, payload, contentType).then(p => {
