@@ -83,9 +83,12 @@ function updateContentful(spaceId, slug, language, payload, contentType) {
                     field[contentfulLanguage] = payload[k];
                 });
 
-                // Save and pubish
+                // Save and publish
                 console.log("Updating", language, slug);
-                return entry.update(); //.then(e => e.publish());
+                return entry.update().then(e => {
+                    console.log("publishing: " + JSON.stringify(e))
+                    e.publish()
+                });
             }
         })
         .catch(error => {
@@ -170,7 +173,10 @@ module.exports = function (req, res) {
                                                 });
 
                                                 // Save and pubish
-                                                return entry.update(); //.then(e => e.publish());
+                                                return entry.update().then(e => {
+                                                    consoile.log("publishing: " + JSON.stringify(e))
+                                                    e.publish()
+                                                });
                                             }
                                         });
                                 })
@@ -181,12 +187,12 @@ module.exports = function (req, res) {
                         //console.log("t->transformIncomingText: " + JSON.stringify(t))
                         //let payload = transformIncomingText(t.content);
                         let payload = {
-                            title: t.data[0].attributes.strings? t.data[0].attributes.strings.other : '',
-                            lead: t.data[1].attributes.strings? t.data[1].attributes.strings.other : '',
+                            title: t.data[0].attributes.strings ? t.data[0].attributes.strings.other : '',
+                            lead: t.data[1].attributes.strings ? t.data[1].attributes.strings.other : '',
                             content: ''
                         };
                         for (let i = 2; i < t.data.length; i++) {
-                            if(t.data[i].attributes.strings && t.data[i].attributes.strings.other)
+                            if (t.data[i].attributes.strings && t.data[i].attributes.strings.other)
                                 payload.content += '<p>' + t.data[i].attributes.strings.other + '</p>';
                         };
                         let contentType = "article";
