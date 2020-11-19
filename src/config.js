@@ -3,7 +3,7 @@ module.exports = {
 	transifexToSpaceDictionary: {
 		"refugeeinfo-refresh": "ktglofo8nf88",
 		"refugeeinfo-staging": "1q5uqv62m69g",
-		//"refugeeinfo-staging" : "jr1l80tm3vzp",
+		//"refugeeinfo-staging" : "jr1l80tm3vzp"
 	},
 	contenfulCountryToTransifexProject: {
 		'3yjEey2fIAIOCou8WCAKAY': 'refugeeinfo-italy-contentful'
