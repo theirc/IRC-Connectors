@@ -55,9 +55,9 @@ function getTransifexResourceBySlug(project, slug, callback) {
     request(options, function (error, response, body) {
         if (error) {
             console.log(error);
-            throw new Error(error);
+            //throw new Error(error);
         }
-        console.log(response.body);
+        //console.log(response.body);
         callback(error, response, body)
     });
 }
@@ -95,9 +95,9 @@ function createTransifexResource(project, payload, callback) {
     request(options, function (error, response) {
         if (error) {
             console.log(error);
-            throw new Error(error);
+            //throw new Error(error);
         }
-        console.log(response.body);
+        //console.log(response.body);
         callback(error, response)
     });
 }
@@ -137,10 +137,13 @@ function uploadTransifexResourceFile(project, slug, content, callback) {
     request(options, function (error, response) {
         if (error) {
             console.log(error);
-            throw new Error(error);
+            //throw new Error(error);
         }
         console.log("uploadTransifexResourceFile -> response: " + response.body);
-        callback(error, response)
+        //Add resource file id to database (using signpost)
+        createArticleFileIdInCMS(slug, project, response.body.data.id, (e, r) => {
+            callback(error, response)
+        });
     });
 }
 
@@ -181,11 +184,37 @@ function getTransifexTranslationStatus(project, slug, callback) {
     request(options, function (error, response, body) {
         if (error) {
             console.log(error);
-            throw new Error(error);
+            //throw new Error(error);
         }
-        console.log(response.body);
+        //console.log(response.body);
         callback(error, response, body)
     });
+}
+
+function createArticleFileIdInCMS(slug, project, transifexFileId, callback) {
+    console.log("createArticleFileIdInCMS -> " + JSON.stringify(translation))
+    let uri = `${process.env.SIGNPOST_API_URL}/articles`;
+    let requestData = {
+        method: 'POST',
+        uri,
+        headers: {
+            'Content-Type': "application/json"
+        },
+        json: true,
+        body: {
+            slug: slug,
+            project: project,
+            transifexFileId: transifexFileId
+        }
+    };
+    console.log("createArticleFileIdInCMS -> requestData: " + JSON.stringify(requestData))
+    request(requestData, (e, r, b) => {
+        if (e) {
+            console.log("createArticleFileIdInCMS -> Error: ", e)
+        }
+        console.log("createArticleFileIdInCMS -> response: ", r)
+        callback(e, r)
+    })
 }
 
 module.exports = {
@@ -197,3 +226,4 @@ module.exports = {
     , getResourceTranslation
     , getTransifexTranslationStatus
 }
+
