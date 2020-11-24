@@ -23,9 +23,8 @@ function generateContentForTransifex(article) {
     title = _article.title ? _article.title : ''
     lead = _article.lead ? cleanUpHTML(md.render(_article.lead)) : '';
     content = _article.content ? cleanUpHTML(md.render(_article.content)) : '';
-
     let body = `<html><body><div class="title">${title}</div><div class="subtitle">${lead}</div>${content}</body></html>`;
-
+    console.log("generateContentForTransifex-> body: ", body)
     return body;
 }
 
@@ -38,7 +37,7 @@ function unicodeEscape(str) {
         }
         return '&#' + ('x') + ('0000' + escape).slice(longhand ? -4 : -2) + ';';
     });
-    //console.log("unicodeEscape: " + ret);
+    console.log("unicodeEscape-> ret", ret);
     return ret;
 }
 

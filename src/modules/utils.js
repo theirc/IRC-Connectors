@@ -1,6 +1,7 @@
 const _ = require("lodash");
 
 function cleanUpHTML(h) {
+    //console.log("cleanUpHTML-> original", h)
     let processedHtml = h
         .replace(/(<img("[^"]*"|[^\/">])*)>/gi, '$1 />')
         .replace(/<meta (.*)[^\/]>/gi, '<meta $1 />')
@@ -10,15 +11,15 @@ function cleanUpHTML(h) {
         .replace(/<div (.*)\/>/gm, "<div $1></div>")
         .replace(/<u>(.*[\n\r\s\t]+.*)<\/u>/gmi, "$1");
 
-
-
-    return processedHtml
+    processedHtml = processedHtml
         .replace(/&#xA0;/g, "&nbsp;")
         .replace(/&nbsp;/g, " ")
         .replace(/&#x([0-9ABCDEFabcdef]+);/g, function (match, dec) {
             return String.fromCharCode(parseInt(`0x${dec}`, 16));
         })
         .replace(/<sup><\/sup>/gim, "");
+    //console.log("cleanUpHTML-> returned", processedHtml)
+    return processedHtml
 }
 const promiseSerial = funcs => funcs.reduce((promise, func) => promise.then(result => func().then(Array.prototype.concat.bind(result))), Promise.resolve([]));
 
