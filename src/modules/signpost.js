@@ -21,9 +21,8 @@ module.exports = function (req, res) {
     }
     console.log("generateContentForTransifex");
     let content = transifexUtils.generateContentForTransifex({
-        lead: service.description,
+        content: service.description,
         title: service.name,
-        content: service.additionalInformation
     })
 
     console.log("generatePayloadForTransifex");

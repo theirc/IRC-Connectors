@@ -231,6 +231,10 @@ module.exports = function (req, res) {
 
 function updateServiceInCMS(resource, language, translation, callback) {
     console.log("translation: " + JSON.stringify(translation))
+    let description = "", i = 1;
+    for (i = 1; i < translation.length; i++) {
+        description += element.attributes.strings.other
+    };
     let uri = `${process.env.SIGNPOST_API_URL}/services/translations`;
     let requestData = {
         method: 'POST',
@@ -243,8 +247,7 @@ function updateServiceInCMS(resource, language, translation, callback) {
             slug: resource,
             language: language,
             name: translation.data[0].attributes.strings.other,
-            description: translation.data[1] ? translation.data[1].attributes.strings.other : null,
-            additionalInformation: translation.data[2] ? translation.data[2].attributes.strings.other : null,
+            description: description
         }
     };
     console.log("requestData: " + JSON.stringify(requestData))
