@@ -214,6 +214,7 @@ function getResourceTranslation(project, key, l) {
     console.log("getResourceTranslation -> options: " + JSON.stringify(options))
     return new Promise((resolve, reject) => {
         request(options, function (error, response, body) {
+            error = error? error : body.errors;
             if (error) {
                 console.log(error);
                 return reject(error);
