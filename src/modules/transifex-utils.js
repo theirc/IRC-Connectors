@@ -2,7 +2,6 @@ const request = require("request");
 const {
     cleanUpHTML
 } = require("./utils");
-
 const Remarkable = require("remarkable");
 
 let {
@@ -70,7 +69,6 @@ function createTransifexResource(project, payload, callback) {
     if (project == null) {
         project = process.env.TRANSIFEX_PROJECT_SLUG
     }
-    var request = require('request');
     var options = {
         method: 'POST',
         url: `${process.env.TRANSIFEX_API_URL_v3}/resources`,
@@ -151,7 +149,7 @@ function uploadTransifexResourceFile(project, slug, content, callback) {
 }
 
 
-function getResourceTranslationAsync(project, key, l) {
+function getResourceTranslation(project, key, l) {
     var options = {
         method: 'GET',
         url: `${process.env.TRANSIFEX_API_URL_v3}/resource_translations?filter[resource]=o:${process.env.TRANSIFEX_ORGANIZATION_SLUG}:p:${project}:r:${key}&filter[language]=l:${l}`,
@@ -175,7 +173,7 @@ function getResourceTranslationAsync(project, key, l) {
     });
 }
 
-function getResourceTranslation(project, key, l) {
+function getResourceTranslationHTML(project, key, l) {
     var options = {
         method: 'POST',
         url: process.env.TRANSIFEX_API_URL_v3 + '/resource_translations_async_downloads',
@@ -184,8 +182,7 @@ function getResourceTranslation(project, key, l) {
             'Authorization': 'Bearer ' + process.env.TRANSIFEX_API_TOKEN
 
         },
-        json: true,
-        body: {
+        body: JSON.stringify({
             data: {
                 type: 'resource_translations_async_downloads',
                 attributes: {
@@ -209,12 +206,12 @@ function getResourceTranslation(project, key, l) {
                     }
                 }
             }
-        }
+        })
     };
     console.log("getResourceTranslation -> options: " + JSON.stringify(options))
     return new Promise((resolve, reject) => {
         request(options, function (error, response, body) {
-            error = error? error : body.errors;
+            error = error ? error : JSON.parse(body).errors;
             if (error) {
                 console.log(error);
                 return reject(error);
@@ -223,20 +220,22 @@ function getResourceTranslation(project, key, l) {
             //ask  the api for the id in the response:
             var options = {
                 method: 'GET',
-                url: process.env.TRANSIFEX_API_URL_v3 + '/resource_translations_async_downloads/' + body.data.id,
+                url: process.env.TRANSIFEX_API_URL_v3 + '/resource_translations_async_downloads/' + JSON.parse(body).data.id,
                 headers: {
                     'Content-Type': 'application/vnd.api+json',
                     'Authorization': 'Bearer ' + process.env.TRANSIFEX_API_TOKEN
                 }
             }
-            request(options, function (error, response, body) {
-                if (error) {
-                    console.log(error);
-                    return reject(error);
-                }
-                console.log("getResourceTranslation -> response 2: " + body);
-                return resolve(JSON.parse(body))
-            });
+            setTimeout(() => {
+                request(options, function (error, response) {
+                    if (error) {
+                        console.log(error);
+                        return reject(error);
+                    }
+                    console.log("getResourceTranslation -> response 2: " + JSON.stringify(response.body));
+                    return resolve(response.body)
+                })
+            }, 5000);//Give 5 seconds to the async request
         });
     });
 };
@@ -294,6 +293,7 @@ module.exports = {
     , createTransifexResource
     , uploadTransifexResourceFile
     , getResourceTranslation
+    , getResourceTranslationHTML
     , getTransifexTranslationStatus
     , createArticleFileIdInCMS
 }
