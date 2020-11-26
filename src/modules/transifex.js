@@ -107,26 +107,14 @@ module.exports = function (req, res) {
 
     console.log('req.body', req.body);
 
-    // const sign_v2 = (url, date, data, secret) => {
-    //     const content_md5 = md5(data);
-    //     const msg = ["POST", url, date, content_md5].join("\n");
-    //     const hmac = crypto.createHmac("sha256", secret);
-    //     return hmac
-    //         .update(msg)
-    //         .digest()
-    //         .toString("base64");
-    // };
-
     switch (event) {
         case "review_completed":
         case "translation_completed":
-            transifexUtils.getResourceTranslation(project, resource, language).then(t => {
-
-                //Check if transifex project needs to update Contentful:
-                if (project === process.env.TRANSIFEX_PROJECT_SLUG_CONTENTFUL
-                    || project.includes("contentful")
-                ) {
-
+            //Check if transifex project needs to update Contentful:
+            if (project === process.env.TRANSIFEX_PROJECT_SLUG_CONTENTFUL
+                || project.includes("contentful")
+            ) {
+                transifexUtils.getResourceTranslationHTML(project, resource, language).then(t => {
                     //Update Contentful with the new translation
                     let spaceId = transifexToSpaceDictionary[project] ? transifexToSpaceDictionary[project] : defaultContentfulSpace;
                     let slug = resource.replace(/html$/, "");
@@ -184,9 +172,9 @@ module.exports = function (req, res) {
                             console.log("Success")
                         });
                     } else {
-                        //console.log("t->transformIncomingText: " + JSON.stringify(t))
-                        //let payload = transformIncomingText(t.content);
-                        let payload = {
+                        console.log("t->transformIncomingText: " + JSON.stringify(t))
+                        let payload = transformIncomingText(t);
+                        /*let payload = {
                             title: t.data[0].attributes.strings ? t.data[0].attributes.strings.other : '',
                             lead: t.data[1].attributes.strings ? t.data[1].attributes.strings.other : '',
                             content: ''
@@ -194,14 +182,16 @@ module.exports = function (req, res) {
                         for (let i = 2; i < t.data.length; i++) {
                             if (t.data[i].attributes.strings && t.data[i].attributes.strings.other)
                                 payload.content += '<p>' + t.data[i].attributes.strings.other + '</p>';
-                        };
+                        };*/
                         let contentType = "article";
                         updateContentful(spaceId, slug, language, payload, contentType).then(p => {
 
                         });
                     }
-                }
-                else {
+                })
+            }
+            else {
+                transifexUtils.getResourceTranslation(project, resource, language).then(t => {
                     //Update Entity in the database with the new translation, based in the slug entity prefix
                     let entityPrefix = resource.substr(0, 4);
                     switch (entityPrefix) {
@@ -222,10 +212,9 @@ module.exports = function (req, res) {
                             break;
                     }
 
-                }
-            });
-    }
-
+                });
+            }
+    };
     res.sendStatus(200);
 };
 

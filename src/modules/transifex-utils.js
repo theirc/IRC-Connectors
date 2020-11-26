@@ -2,8 +2,11 @@ const request = require("request");
 const {
     cleanUpHTML
 } = require("./utils");
-
 const Remarkable = require("remarkable");
+
+let {
+    transifexToSpaceDictionary,
+} = require("../config");
 
 const md = new Remarkable("full", {
     html: true,
@@ -54,9 +57,9 @@ function getTransifexResourceBySlug(project, slug, callback) {
     request(options, function (error, response, body) {
         if (error) {
             console.log(error);
-            throw new Error(error);
+            //throw new Error(error);
         }
-        console.log(response.body);
+        //console.log(response.body);
         callback(error, response, body)
     });
 }
@@ -65,7 +68,6 @@ function createTransifexResource(project, payload, callback) {
     if (project == null) {
         project = process.env.TRANSIFEX_PROJECT_SLUG
     }
-    var request = require('request');
     var options = {
         method: 'POST',
         url: `${process.env.TRANSIFEX_API_URL_v3}/resources`,
@@ -74,6 +76,7 @@ function createTransifexResource(project, payload, callback) {
             'Authorization': 'Bearer ' + process.env.TRANSIFEX_API_TOKEN
 
         },
+        json: true,
         body:
             JSON.stringify({
                 data: {
@@ -94,12 +97,14 @@ function createTransifexResource(project, payload, callback) {
     request(options, function (error, response) {
         if (error) {
             console.log(error);
-            throw new Error(error);
+            //throw new Error(error);
         }
-        console.log(response.body);
+        //console.log(response.body);
         callback(error, response)
     });
 }
+
+
 
 function uploadTransifexResourceFile(project, slug, content, callback) {
     if (project == null) {
@@ -133,15 +138,15 @@ function uploadTransifexResourceFile(project, slug, content, callback) {
 
     };
     console.log("uploadTransifexResourceFile -> options: " + JSON.stringify(options))
-    request(options, function (error, response) {
+    request(options, function (error, response, body) {
         if (error) {
             console.log(error);
-            throw new Error(error);
+            //throw new Error(error);
         }
         console.log("uploadTransifexResourceFile -> response: " + response.body);
-        callback(error, response)
     });
 }
+
 
 function getResourceTranslation(project, key, l) {
     var options = {
@@ -167,6 +172,73 @@ function getResourceTranslation(project, key, l) {
     });
 }
 
+function getResourceTranslationHTML(project, key, l) {
+    var options = {
+        method: 'POST',
+        url: process.env.TRANSIFEX_API_URL_v3 + '/resource_translations_async_downloads',
+        headers: {
+            'Content-Type': 'application/vnd.api+json',
+            'Authorization': 'Bearer ' + process.env.TRANSIFEX_API_TOKEN
+
+        },
+        body: JSON.stringify({
+            data: {
+                type: 'resource_translations_async_downloads',
+                attributes: {
+                    content_encoding: 'text',
+                    file_type: 'default',
+                    mode: 'default',
+                    pseudo: false
+                },
+                relationships: {
+                    resource: {
+                        data: {
+                            type: 'resources',
+                            id: `o:${process.env.TRANSIFEX_ORGANIZATION_SLUG}:p:${project}:r:${key}`
+                        }
+                    },
+                    language: {
+                        data: {
+                            type: 'languages',
+                            id: 'l:' + l
+                        }
+                    }
+                }
+            }
+        })
+    };
+    console.log("getResourceTranslation -> options: " + JSON.stringify(options))
+    return new Promise((resolve, reject) => {
+        request(options, function (error, response, body) {
+            error = error ? error : JSON.parse(body).errors;
+            if (error) {
+                console.log(error);
+                return reject(error);
+            }
+            console.log("getResourceTranslation -> response 1: " + JSON.stringify(body));
+            //ask  the api for the id in the response:
+            var options = {
+                method: 'GET',
+                url: process.env.TRANSIFEX_API_URL_v3 + '/resource_translations_async_downloads/' + JSON.parse(body).data.id,
+                headers: {
+                    'Content-Type': 'application/vnd.api+json',
+                    'Authorization': 'Bearer ' + process.env.TRANSIFEX_API_TOKEN
+                }
+            }
+            setTimeout(() => {
+                request(options, function (error, response) {
+                    if (error) {
+                        console.log(error);
+                        return reject(error);
+                    }
+                    console.log("getResourceTranslation -> response 2: " + JSON.stringify(response.body));
+                    return resolve(response.body)
+                })
+            }, 5000);//Give 5 seconds to the async request
+        });
+    });
+};
+
 function getTransifexTranslationStatus(project, slug, callback) {
     var options = {
         'method': 'GET',
@@ -180,11 +252,37 @@ function getTransifexTranslationStatus(project, slug, callback) {
     request(options, function (error, response, body) {
         if (error) {
             console.log(error);
-            throw new Error(error);
+            //throw new Error(error);
         }
-        console.log(response.body);
+        //console.log(response.body);
         callback(error, response, body)
     });
+}
+
+function createArticleFileIdInCMS(slug, project, transifexFileId, callback) {
+    console.log("createArticleFileIdInCMS -> " + JSON.stringify(slug))
+    let uri = `${process.env.SIGNPOST_API_URL}articles`;
+    let requestData = {
+        method: 'POST',
+        uri,
+        headers: {
+            'Content-Type': "application/json"
+        },
+        json: true,
+        body: {
+            slug: slug,
+            contentfulProject: project,
+            transifexFileId: transifexFileId
+        }
+    };
+    console.log("createArticleFileIdInCMS -> requestData: " + JSON.stringify(requestData))
+    request(requestData, (e, r, b) => {
+        if (e) {
+            console.log("createArticleFileIdInCMS -> Error: ", e)
+        }
+        console.log("createArticleFileIdInCMS -> response: ", r)
+        callback(e, r)
+    })
 }
 
 module.exports = {
@@ -194,5 +292,7 @@ module.exports = {
     , createTransifexResource
     , uploadTransifexResourceFile
     , getResourceTranslation
+    , getResourceTranslationHTML
     , getTransifexTranslationStatus
+    , createArticleFileIdInCMS
 }
