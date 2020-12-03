@@ -76,7 +76,6 @@ function createTransifexResource(project, payload, callback) {
             'Authorization': 'Bearer ' + process.env.TRANSIFEX_API_TOKEN
 
         },
-        json: true,
         body:
             JSON.stringify({
                 data: {
@@ -99,7 +98,7 @@ function createTransifexResource(project, payload, callback) {
             console.log(error);
             //throw new Error(error);
         }
-        //console.log(response.body);
+        console.log(response.body);
         callback(error, response)
     });
 }
