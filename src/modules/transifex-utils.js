@@ -207,7 +207,7 @@ function getResourceTranslationHTML(project, key, l) {
             }
         })
     };
-    console.log("getResourceTranslation -> options: " + JSON.stringify(options))
+    console.log("getResourceTranslationHTML -> options: " + JSON.stringify(options))
     return new Promise((resolve, reject) => {
         request(options, function (error, response, body) {
             error = error ? error : JSON.parse(body).errors;
@@ -215,7 +215,7 @@ function getResourceTranslationHTML(project, key, l) {
                 console.log(error);
                 return reject(error);
             }
-            console.log("getResourceTranslation -> response 1: " + JSON.stringify(body));
+            console.log("getResourceTranslationHTML -> response 1: " + JSON.stringify(body));
             //ask  the api for the id in the response:
             var options = {
                 method: 'GET',
@@ -231,7 +231,7 @@ function getResourceTranslationHTML(project, key, l) {
                         console.log(error);
                         return reject(error);
                     }
-                    console.log("getResourceTranslation -> response 2: " + JSON.stringify(response.body));
+                    console.log("getResourceTranslationHTML -> response 2: " + JSON.stringify(response.body));
                     return resolve(response.body)
                 })
             }, 5000);//Give 5 seconds to the async request

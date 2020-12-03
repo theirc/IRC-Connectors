@@ -221,8 +221,8 @@ module.exports = function (req, res) {
 function updateServiceInCMS(resource, language, translation, callback) {
     console.log("translation: " + JSON.stringify(translation))
     let description = "", i = 1;
-    for (i = 1; i < translation.length; i++) {
-        description += element.attributes.strings.other
+    for (i = 1; i < translation.data.length; i++) {
+        description += translation.data[i].attributes.strings.other
     };
     let uri = `${process.env.SIGNPOST_API_URL}/services/translations`;
     let requestData = {
@@ -244,7 +244,7 @@ function updateServiceInCMS(resource, language, translation, callback) {
         if (e) {
             console.log("updateServiceInCMS -> Error: ", e)
         }
-        console.log("updateServiceInCMS -> response: ", r)
+        console.log("updateServiceInCMS -> response: ", r.body)
         callback(e, r, b)
     })
 }
