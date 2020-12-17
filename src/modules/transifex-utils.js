@@ -233,7 +233,7 @@ function getResourceTranslationHTML(project, key, l) {
                     console.log("getResourceTranslationHTML -> response 2: " + JSON.stringify(response.body));
                     return resolve(response.body)
                 })
-            }, 5000);//Give 5 seconds to the async request
+            }, 30000);//Give 1 minute to the async request
         });
     });
 };
