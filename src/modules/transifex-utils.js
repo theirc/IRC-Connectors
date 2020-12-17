@@ -207,6 +207,9 @@ function getResourceTranslationHTML(project, key, l) {
         })
     };
     console.log("getResourceTranslationHTML -> options: " + JSON.stringify(options))
+    let timeout = process.env.TRANSIFEX_TRANSLATION_TIMEOUT_SECONDS?  
+        process.env.TRANSIFEX_TRANSLATION_TIMEOUT_SECONDS * 1000
+        : 30000 //Give 30 seconds to the async request by default
     return new Promise((resolve, reject) => {
         request(options, function (error, response, body) {
             error = error ? error : JSON.parse(body).errors;
@@ -233,7 +236,7 @@ function getResourceTranslationHTML(project, key, l) {
                     console.log("getResourceTranslationHTML -> response 2: " + JSON.stringify(response.body));
                     return resolve(response.body)
                 })
-            }, 30000);//Give 1 minute to the async request
+            }, timeout);
         });
     });
 };
