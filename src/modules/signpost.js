@@ -198,7 +198,7 @@ module.exports = function (req, res) {
                     return res.status(500).send({message: 'Error en catch 2', error: e});
                 });
         } else {
-            //console.log("An error ocurred", __e, r)
+            console.log("An error ocurred", __e, r)
             return res.status(500).send({message: 'Error', error: __e, response: r});
         }
     })
