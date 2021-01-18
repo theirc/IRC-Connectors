@@ -34,8 +34,9 @@
     "cheerio": "^1.0.0-rc.2",
     "compression": "^1.7.1",
     "contentful": "^5.0.1",
-    "contentful-management": "^5.4.0",
+    "contentful-management": "^7.5.1",
     "cors": "^2.8.4",
+    "dotenv": "^8.2.0",
     "fb": "^2.0.0",
     "feathers": "^2.2.3",
     "feathers-configuration": "^0.4.2",
@@ -43,8 +44,8 @@
     "feathers-hooks": "^2.1.1",
     "feathers-hooks-common": "^3.10.0",
     "feathers-rest": "^1.8.0",
-    "helmet": "^3.9.0",
-    "lodash": "^4.17.4",
+    "helmet": "^4.3.1",
+    "lodash": "^4.17.20",
     "remarkable": "^1.7.1",
     "serve-favicon": "^2.4.5",
     "to-markdown": "^3.1.0",
@@ -52,8 +53,8 @@
   },
   "devDependencies": {
     "eslint": "^4.9.0",
-    "mocha": "^4.0.1",
-    "nodemon": "^1.12.1",
+    "mocha": "^8.2.1",
+    "nodemon": "^2.0.6",
     "request": "^2.83.0",
     "request-promise": "^4.2.2"
   }

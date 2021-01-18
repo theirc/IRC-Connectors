@@ -4,59 +4,28 @@ const _ = require("lodash");
 const request = require("request");
 const cheerio = require("cheerio");
 const contentful = require("contentful-management");
+const transifexUtils = require('./transifex-utils');
+
+const { signpostEntityPrefixes } = require("../config");
+
+require('dotenv').config();
+
 const {
     cleanUpHTML
 } = require("./utils");
 const {
     transifexToSpaceDictionary,
-    contenfulLanguageDictionary
+    contenfulLanguageDictionary,
+    defaultContentfulSpace
 } = require("../config");
 const toMarkdown = require("to-markdown");
 const contentfulManagement = require("contentful-management");
 
-const TRANSIFEX_API_KEY = process.env.TRANSIFEX_API_KEY;
 const CONTENTFUL_API_TOKEN = process.env.CONTENTFUL_API_TOKEN;
 
 const client = contentfulManagement.createClient({
     accessToken: CONTENTFUL_API_TOKEN,
 });
-
-function resourceTranslationRequest(project, key, l) {
-    return new Promise((resolve, reject) => {
-        request
-            /*---- API version 2
-            .get(`https://www.transifex.com/api/2/project/${project}/resource/${key}/translation/${l}/`, (e, r, b) => {
-                if (e) {
-                    reject(e);
-                    return;
-                }
-                try {
-                    resolve(JSON.parse(b));
-                } catch (e) {
-                    //reject(e);
-                    console.log("Error", b);
-                    reject(null);
-                }
-            })
-            .auth("api", TRANSIFEX_API_KEY, false);
-            ----*/
-            /*------- API v3 -----*/
-            .get(`https://rest.api.transifex.com/resource_translations?filter[resource]=o:${project}:p:${project}:r:${key}&filter[language]=l:${l}`, (e, r, b) => {
-                if (e) {
-                    reject(e);
-                    return;
-                }
-                try {
-                    resolve(JSON.parse(b));
-                } catch (e) {
-                    //reject(e);
-                    console.log("Error", b);
-                    reject(null);
-                }
-            })
-            .oauth('Authorization: Bearer ',TRANSIFEX_API_KEY, false)
-    });
-}
 
 function transformIncomingText(content) {
     // Closing self closing tags
@@ -85,15 +54,15 @@ function updateContentful(spaceId, slug, language, payload, contentType) {
         .getSpace(spaceId)
         .then(s =>
             s
-            .getEntries({
-                "fields.slug": slug,
-                content_type: contentType,
-            })
-            .then(es => es.total > 0 && s.getEntry(es.items[0].sys.id))
-            .then(e => ({
-                entry: e,
-                space: s,
-            }))
+                .getEntries({
+                    "fields.slug": slug,
+                    content_type: contentType,
+                })
+                .then(es => es.total > 0 && s.getEntry(es.items[0].sys.id))
+                .then(e => ({
+                    entry: e,
+                    space: s,
+                }))
         )
         .catch(error => {
             console.error(error);
@@ -114,9 +83,12 @@ function updateContentful(spaceId, slug, language, payload, contentType) {
                     field[contentfulLanguage] = payload[k];
                 });
 
-                // Save and pubish
+                // Save and publish
                 console.log("Updating", language, slug);
-                return entry.update().then(e => e.publish());
+                return entry.update().then(e => {
+                    console.log("publishing: " + JSON.stringify(e))
+                    e.publish()
+                });
             }
         })
         .catch(error => {
@@ -135,90 +107,225 @@ module.exports = function (req, res) {
 
     console.log('req.body', req.body);
 
-    // const sign_v2 = (url, date, data, secret) => {
-    //     const content_md5 = md5(data);
-    //     const msg = ["POST", url, date, content_md5].join("\n");
-    //     const hmac = crypto.createHmac("sha256", secret);
-    //     return hmac
-    //         .update(msg)
-    //         .digest()
-    //         .toString("base64");
-    // };
-
     switch (event) {
         case "review_completed":
         case "translation_completed":
-        case "translation_completed_updated":
-            resourceTranslationRequest(project, resource, language).then(t => {
-                let spaceId = transifexToSpaceDictionary[project];
-                let slug = resource.replace(/html$/, "");
-                console.log(slug);
-                if (slug === "category-names") {
-                    let payload = JSON.parse(t.content);
-                    Promise.all(
-                        Object.keys(payload)
-                        .filter(k => k.indexOf("---description") === -1)
-                        .map(k => {
-                            console.log(k);
-                            let updatePayload = {
-                                name: payload[k],
-                                description: payload[k + "---description"],
-                            };
+            //Check if transifex project needs to update Contentful:
+            if (project === process.env.TRANSIFEX_PROJECT_SLUG_CONTENTFUL
+                || project.includes("contentful")
+            ) {
+                transifexUtils.getResourceTranslationHTML(project, resource, language).then(t => {
+                    //Update Contentful with the new translation
+                    let spaceId = transifexToSpaceDictionary[project] ? transifexToSpaceDictionary[project] : defaultContentfulSpace;
+                    let slug = resource.replace(/html$/, "");
+                    console.log(slug);
+                    if (slug === "category-names") {
+                        let payload = JSON.parse(t.content);
+                        Promise.all(
+                            Object.keys(payload)
+                                .filter(k => k.indexOf("---description") === -1)
+                                .map(k => {
+                                    console.log(k);
+                                    let updatePayload = {
+                                        name: payload[k],
+                                        description: payload[k + "---description"],
+                                    };
 
-                            return client
-                                .getSpace(spaceId)
-                                .then(s =>
-                                    s
-                                    .getEntries({
-                                        "fields.slug": k,
-                                        content_type: "category"
-                                    })
-                                    .then(es => es.total > 0 && s.getEntry(es.items[0].sys.id))
-                                    .then(e => ({
-                                        entry: e,
-                                        space: s,
-                                    }))
-                                )
-                                .then(({
-                                    entry,
-                                    space
-                                }) => {
-                                    if (entry) {
-                                        console.log(JSON.stringify(updatePayload, null, 4));
-                                        const contentfulLanguage = contenfulLanguageDictionary[language] || language;
-                                        Object.keys(updatePayload).forEach(uk => {
-                                            let field = entry.fields[uk] || {
-                                                [contentfulLanguage]: ""
-                                            };
+                                    return client
+                                        .getSpace(spaceId)
+                                        .then((space) =>
+                                            space
+                                                .getEntries({
+                                                    "fields.slug": k,
+                                                    content_type: "category"
+                                                })
+                                                .then(entries => entries.total > 0 && space.getEntry(entries.items[0].sys.id))
+                                                .then(entry => ({
+                                                    entry: entry,
+                                                    space: space,
+                                                }))
+                                        )
+                                        .then(({
+                                            entry,
+                                            space
+                                        }) => {
+                                            if (entry) {
+                                                console.log(JSON.stringify(updatePayload, null, 4));
+                                                const contentfulLanguage = contenfulLanguageDictionary[language] || language;
+                                                Object.keys(updatePayload).forEach(uk => {
+                                                    let field = entry.fields[uk] || {
+                                                        [contentfulLanguage]: ""
+                                                    };
 
-                                            field[contentfulLanguage] = updatePayload[uk];
+                                                    field[contentfulLanguage] = updatePayload[uk];
+                                                });
+
+                                                // Save and pubish
+                                                return entry.update().then(e => {
+                                                    consoile.log("publishing: " + JSON.stringify(e))
+                                                    e.publish()
+                                                });
+                                            }
                                         });
+                                })
+                        ).then(() => {
+                            console.log("Success")
+                        });
+                    } else {
+                        console.log("t->transformIncomingText: " + JSON.stringify(t))
+                        let payload = transformIncomingText(t);
+                        /*let payload = {
+                            title: t.data[0].attributes.strings ? t.data[0].attributes.strings.other : '',
+                            lead: t.data[1].attributes.strings ? t.data[1].attributes.strings.other : '',
+                            content: ''
+                        };
+                        for (let i = 2; i < t.data.length; i++) {
+                            if (t.data[i].attributes.strings && t.data[i].attributes.strings.other)
+                                payload.content += '<p>' + t.data[i].attributes.strings.other + '</p>';
+                        };*/
+                        let contentType = "article";
+                        updateContentful(spaceId, slug, language, payload, contentType).then(p => {
 
-                                        // Save and pubish
-                                        return entry.update(); //.then(e => e.publish());
-                                    }
-                                });
-                        })
-                    ).then(() => console.log("Success"));
-                } else {
-                    let payload = transformIncomingText(t.content);
-                    let contentType = "article";
-                    if (slug.indexOf("---") > 0) {
-                        const slugParts = slug.split("---");
-
-                        slug = slugParts[1];
-                        contentType = slugParts[0];
+                        });
+                    }
+                })
+            }
+            else {
+                transifexUtils.getResourceTranslation(project, resource, language).then(t => {
+                    //Update Entity in the database with the new translation, based in the slug entity prefix
+                    let entityPrefix = resource.substr(0, 4);
+                    switch (entityPrefix) {
+                        case signpostEntityPrefixes.services:
+                            updateServiceInCMS(resource, language, t, (e, r, b) => { });
+                            break;
+                        case signpostEntityPrefixes.providers:
+                            updateProviderInCMS(resource, language, t, (e, r, b) => { });
+                            break;
+                        case signpostEntityPrefixes.serviceCategories:
+                            updateServiceCategoryInCMS(resource, language, t, (e, r, b) => { });
+                            break;
+                        case signpostEntityPrefixes.providerCategories:
+                            updateProviderCategoryInCMS(resource, language, t, (e, r, b) => { });
+                            break;
+                        default:
+                            console.log("entityPrefix: " + entityPrefix + " not matching any defined prefixes: " + JSON.stringify(signpostEntityPrefixes))
+                            break;
                     }
 
-
-                    updateContentful(spaceId, slug, language, payload, contentType).then(p => {});
-                }
-            });
-            break;
-
-        default:
-            break;
-    }
-
+                });
+            }
+    };
     res.sendStatus(200);
 };
+
+function updateServiceInCMS(resource, language, translation, callback) {
+    console.log("translation: " + JSON.stringify(translation))
+    let description = "", i = 1;
+    for (i = 1; i < translation.data.length; i++) {
+        description += translation.data[i].attributes.strings.other
+    };
+    let uri = `${process.env.SIGNPOST_API_URL}/services/translations`;
+    let requestData = {
+        method: 'POST',
+        uri,
+        headers: {
+            'Content-Type': "application/json"
+        },
+        json: true,
+        body: {
+            slug: resource,
+            language: language,
+            name: translation.data[0].attributes.strings.other,
+            description: description
+        }
+    };
+    console.log("requestData: " + JSON.stringify(requestData))
+    request(requestData, (e, r, b) => {
+        if (e) {
+            console.log("updateServiceInCMS -> Error: ", e)
+        }
+        console.log("updateServiceInCMS -> response: ", r.body)
+        callback(e, r, b)
+    })
+}
+
+function updateProviderCategoryInCMS(resource, language, translation, callback) {
+    console.log("translation: " + JSON.stringify(translation))
+    let uri = `${process.env.SIGNPOST_API_URL}/provider-categories/translations`;
+    let requestData = {
+        method: 'POST',
+        uri,
+        headers: {
+            'Content-Type': "application/json"
+        },
+        json: true,
+        body: {
+            slug: resource,
+            language: language,
+            name: translation.data[0].attributes.strings.other,
+            description: translation.data[1] ? translation.data[1].attributes.strings.other : null,
+        }
+    };
+    console.log("requestData: " + JSON.stringify(requestData))
+    request(requestData, (e, r, b) => {
+        if (e) {
+            console.log("updateServiceInCMS -> Error: ", e)
+        }
+        console.log("updateServiceInCMS -> response: ", r)
+        callback(e, r, b)
+    })
+}
+
+function updateServiceCategoryInCMS(resource, language, translation, callback) {
+    console.log("translation: " + JSON.stringify(translation))
+    let uri = `${process.env.SIGNPOST_API_URL}/service-categories/translations`;
+    let requestData = {
+        method: 'POST',
+        uri,
+        headers: {
+            'Content-Type': "application/json"
+        },
+        json: true,
+        body: {
+            slug: resource,
+            language: language,
+            name: translation.data[0].attributes.strings.other,
+            description: translation.data[1] ? translation.data[1].attributes.strings.other : null,
+        }
+    };
+    console.log("requestData: " + JSON.stringify(requestData))
+    request(requestData, (e, r, b) => {
+        if (e) {
+            console.log("updateServiceInCMS -> Error: ", e)
+        }
+        console.log("updateServiceInCMS -> response: ", r)
+        callback(e, r, b)
+    })
+}
+
+function updateProviderInCMS(resource, language, translation, callback) {
+    console.log("translation: " + JSON.stringify(translation))
+    let uri = `${process.env.SIGNPOST_API_URL}/providers/translations`;
+    let requestData = {
+        method: 'POST',
+        uri,
+        headers: {
+            'Content-Type': "application/json"
+        },
+        json: true,
+        body: {
+            slug: resource,
+            language: language,
+            name: translation.data[0].attributes.strings.other,
+            description: translation.data[1] ? translation.data[1].attributes.strings.other : null,
+        }
+    };
+    console.log("requestData: " + JSON.stringify(requestData))
+    request(requestData, (e, r, b) => {
+        if (e) {
+            console.log("updateServiceInCMS -> Error: ", e)
+        }
+        console.log("updateServiceInCMS -> response: ", r)
+        callback(e, r, b)
+    })
+}
