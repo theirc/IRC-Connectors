@@ -50,14 +50,14 @@ function transformIncomingText(content) {
 }
 
 function updateContentful(spaceId, slug, language, payload, contentType) {
+    console.log("Updating Contentful space: " + spaceId)
     return client
         .getSpace(spaceId)
         .then(s =>
-            s
-                .getEntries({
-                    "fields.slug": slug,
-                    content_type: contentType,
-                })
+            s.getEntries({
+                "fields.slug": slug,
+                content_type: contentType,
+            })
                 .then(es => es.total > 0 && s.getEntry(es.items[0].sys.id))
                 .then(e => ({
                     entry: e,
