@@ -121,7 +121,7 @@ function uploadTransifexResourceFile(project, slug, content, callback) {
             JSON.stringify({
                 data: {
                     attributes: {
-                        content: content,
+                        content: "{\"key\": \"" +content + "\"}",
                         content_encoding: 'text'
                     },
                     relationships: {
