@@ -205,10 +205,13 @@ module.exports = function (req, res) {
                             updateServiceCategoryInCMS(resource, language, t, (e, r, b) => { });
                             break;
                         case signpostEntityPrefixes.providerCategories:
-                            updateProviderCategoryInCMS(resource, language, t, (e, r, b) => { });
+                            updateProviderCategoryInCMS(resource, language, t, (e, r, b) => {  });
                             break;
                         default:
                             console.log("entityPrefix: " + entityPrefix + " not matching any defined prefixes: " + JSON.stringify(signpostEntityPrefixes))
+                            //OLD CMS translations fix:
+                            if(project === "refugeeinfo-services"){
+                                updateServiceInCMS(resource, language, t, (e, r, b) => { })                            }
                             break;
                     }
 
@@ -244,7 +247,7 @@ function updateServiceInCMS(resource, language, translation, callback) {
         if (e) {
             console.log("updateServiceInCMS -> Error: ", e)
         }
-        console.log("updateServiceInCMS -> response: ", r.body)
+        console.log("updateServiceInCMS -> Response: ", JSON.stringify(r))
         callback(e, r, b)
     })
 }
@@ -271,7 +274,7 @@ function updateProviderCategoryInCMS(resource, language, translation, callback) 
         if (e) {
             console.log("updateServiceInCMS -> Error: ", e)
         }
-        console.log("updateServiceInCMS -> response: ", r)
+        console.log("updateServiceInCMS -> Response: ", JSON.stringify(r))
         callback(e, r, b)
     })
 }
@@ -298,7 +301,7 @@ function updateServiceCategoryInCMS(resource, language, translation, callback) {
         if (e) {
             console.log("updateServiceInCMS -> Error: ", e)
         }
-        console.log("updateServiceInCMS -> response: ", r)
+        console.log("updateServiceInCMS -> Response: ", JSON.stringify(r))
         callback(e, r, b)
     })
 }
@@ -325,7 +328,7 @@ function updateProviderInCMS(resource, language, translation, callback) {
         if (e) {
             console.log("updateServiceInCMS -> Error: ", e)
         }
-        console.log("updateServiceInCMS -> response: ", r)
+        console.log("updateServiceInCMS -> Response: ", JSON.stringify(r))
         callback(e, r, b)
     })
 }
