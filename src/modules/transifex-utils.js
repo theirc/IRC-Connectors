@@ -26,13 +26,13 @@ function generateContentForTransifex(article) {
     title = _article.title ? _article.title : ''
     lead = _article.lead ? cleanUpHTML(md.render(_article.lead)) : '';
     content = _article.content ? cleanUpHTML(md.render(_article.content)) : '';
-    let body = `<html><body><div class="title">${title}</div><div class="subtitle">${lead}</div>${content}</body></html>`;
+    let body = `<html><body><div class='title'>${title}</div><div class='subtitle'>${lead}</div>${content}</body></html>`;
     console.log("generateContentForTransifex-> body: ", body)
     return body;
 }
 
 function unicodeEscape(str) {
-    let ret = str.replace(/[\s\S]/g, function (character) {
+    let ret = str.replace(/[\s\S]\"/g, function (character) {
         var escape = character.charCodeAt().toString(16),
             longhand = escape.length > 2;
         if (!longhand) {
@@ -121,7 +121,7 @@ function uploadTransifexResourceFile(project, slug, content, callback) {
             JSON.stringify({
                 data: {
                     attributes: {
-                        content: content,
+                        content: "{\"key\": \"" +content + "\"}",
                         content_encoding: 'text'
                     },
                     relationships: {
