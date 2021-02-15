@@ -28,6 +28,8 @@ const client = contentfulManagement.createClient({
 });
 
 function transformIncomingText(content) {
+    content = content.replace("{\"key\": \"","").replace("\"}","")
+    console.log("transformIncomingText -> original: " + content)
     // Closing self closing tags
     //
     let processedHtml = cleanUpHTML(content);
@@ -40,7 +42,7 @@ function transformIncomingText(content) {
 
 
     console.log('Dollar Sign:', $.html());
-    const parsedContent = toMarkdown($.html()).replace(/<div class="hr">---<\/div>/gi, "---");
+    const parsedContent = toMarkdown($.html());//.replace(/<div class="hr">---<\/div>/gi, "---");
     console.log('Parsed Content', parsedContent);
     return {
         title: title.text() ? title.text() : null,
@@ -74,7 +76,7 @@ function updateContentful(spaceId, slug, language, payload, contentType) {
             if (entry) {
                 const contentfulLanguage = contenfulLanguageDictionary[language] || language;
 
-                console.log(JSON.stringify(payload, null, 4));
+                console.log("Contentful Payload ->"+JSON.stringify(payload, null, 4));
                 Object.keys(payload).forEach(k => {
                     let field = entry.fields[k] || {
                         [contentfulLanguage]: ""
