@@ -34,7 +34,7 @@
     "cheerio": "^1.0.0-rc.2",
     "compression": "^1.7.1",
     "contentful": "^5.0.1",
-    "contentful-management": "^5.4.0",
+    "contentful-management": "^7.8.0",
     "cors": "^2.8.4",
     "dotenv": "^8.2.0",
     "fb": "^2.0.0",
