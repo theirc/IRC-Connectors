@@ -31,7 +31,7 @@ module.exports = function (req, res) {
         name: service.name,
         i18n_type: "HTML",
         accept_translations: true,
-        categories: service.categories
+        categories: service.categories,
     };
     let serviceProject;
     if(service.transifexProject){
