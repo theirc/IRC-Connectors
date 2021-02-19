@@ -33,17 +33,23 @@ module.exports = function (req, res) {
         accept_translations: true,
         categories: service.categories
     };
-
+    let serviceProject;
+    if(service.transifexProject){
+        console.log("service.transifexProject->" + service.transifexProject)
+        serviceProject = service.transifexProject;
+    } else {
+        serviceProject = project;
+    }
     //Checking if resource is already created
     console.log("Checking if resource is already created");
-    transifexUtils.getTransifexResourceBySlug(project, payload.slug, (__e, r, __b) => {
+    transifexUtils.getTransifexResourceBySlug(serviceProject, payload.slug, (__e, r, __b) => {
         //if article doesn't exists, create it, else update it:
         if (r.statusCode === 404) {
             //if article doesn't exists, create it, else update it:
             console.log("createTransifexResource");
             let promise = new Promise((resolve, reject) => {
                 transifexUtils.createTransifexResource(
-                    project,                                //project
+                    serviceProject,                                //project
                     payload,                                //payload
                     (e1, r1, b1) => {
                         if (e1) {
@@ -75,7 +81,7 @@ module.exports = function (req, res) {
                         else {
                             console.log("uploadTransifexResourceFile");
                             transifexUtils.uploadTransifexResourceFile(
-                                project,
+                                serviceProject,
                                 service.slug,
                                 transifexUtils.unicodeEscape(content),                            //project
                                 (e1, r1, b1) => {
@@ -139,7 +145,7 @@ module.exports = function (req, res) {
             console.log("Resource already exists in Transifex");
             let promise = new Promise((resolve, reject) => {
                 transifexUtils.uploadTransifexResourceFile(
-                    project,
+                    serviceProject,
                     service.slug,
                     transifexUtils.unicodeEscape(content),                            //project
                     (e1, r1) => {
