@@ -149,7 +149,7 @@ function importArticleAndVideo(req, space) {
                                             console.log('Hooked')
                                         })
                                         reject(e);
-                                        return;
+                                        return ;
                                     }
                                     else {
                                         request({
