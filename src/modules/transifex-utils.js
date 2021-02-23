@@ -53,7 +53,7 @@ function getTransifexResourceBySlug(project, slug, callback) {
             'Cookie': 'AWSALB=pF31Pi+kG1MKxAfaW9mjX71drgBzk5is4w/4rSPeMYnl4Cd7eC0Dm3w6PiFXMYVdFEVb+6UAZYpA1mZmoCj730fGjAsGGWM94ngp1xROolV3oVUPBTaNU46EYy9A; AWSALBCORS=pF31Pi+kG1MKxAfaW9mjX71drgBzk5is4w/4rSPeMYnl4Cd7eC0Dm3w6PiFXMYVdFEVb+6UAZYpA1mZmoCj730fGjAsGGWM94ngp1xROolV3oVUPBTaNU46EYy9A'
         }
     };
-    console.log("options", options);
+    console.log("getTransifexResourceBySlug -> options", options);
     request(options, function (error, response, body) {
         if (error) {
             console.log(error);
@@ -105,7 +105,7 @@ function createTransifexResource(project, payload, callback) {
 
 
 
-function uploadTransifexResourceFile(project, slug, content, callback) {
+function uploadTransifexResourceFile(project, slug, content, key=true) {
     if (project == null) {
         project = process.env.TRANSIFEX_PROJECT_SLUG
     }
@@ -121,7 +121,7 @@ function uploadTransifexResourceFile(project, slug, content, callback) {
             JSON.stringify({
                 data: {
                     attributes: {
-                        content: "{\"key\": \"" +content + "\"}",
+                        content: key? "{\"key\": \"" +content + "\"}" : content,
                         content_encoding: 'text'
                     },
                     relationships: {
