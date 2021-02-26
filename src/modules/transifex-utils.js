@@ -56,10 +56,10 @@ function getTransifexResourceBySlug(project, slug, callback) {
     console.log("getTransifexResourceBySlug -> options", options);
     request(options, function (error, response, body) {
         if (error) {
-            console.log(error);
+            console.log("getTransifexResourceBySlug -> error: " + error);
             //throw new Error(error);
         }
-        //console.log(response.body);
+        console.log("getTransifexResourceBySlug -> response: " + JSON.stringify(response));
         callback(error, response, body)
     });
 }
@@ -97,8 +97,9 @@ function createTransifexResource(project, payload, callback) {
         if (error) {
             console.log(error);
             //throw new Error(error);
+        }else{
+            //console.log(response.body);
         }
-        console.log(response.body);
         callback(error, response)
     });
 }
@@ -142,7 +143,7 @@ function uploadTransifexResourceFile(project, slug, content, key=true) {
             console.log(error);
             //throw new Error(error);
         }
-        console.log("uploadTransifexResourceFile -> response: " + response.body);
+        console.log("uploadTransifexResourceFile -> response: " + JSON.stringify(response));
     });
 }
 

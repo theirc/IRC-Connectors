@@ -227,7 +227,7 @@ function updateServiceInCMS(resource, language, translation, callback) {
     console.log("translation: " + JSON.stringify(translation))
     let description = "", i = 1;
     for (i = 1; i < translation.data.length; i++) {
-        description += '<p>' + translation.data[i].attributes.strings.other + '</p>'
+        description += '<p>' + translation.data[i].attributes.strings.other.replace("\"}","") + '</p>'
     };
     let uri = `${process.env.SIGNPOST_API_URL}/services/translations`;
     let requestData = {

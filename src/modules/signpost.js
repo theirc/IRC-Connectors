@@ -44,7 +44,7 @@ module.exports = function (req, res) {
     console.log("Checking if resource is already created");
     transifexUtils.getTransifexResourceBySlug(serviceProject, payload.slug, (__e, r, __b) => {
         //if article doesn't exists, create it, else update it:
-        if (r.statusCode === 404) {
+        if (r && r.statusCode === 404) {
             //if article doesn't exists, create it, else update it:
             console.log("createTransifexResource");
             let promise = new Promise((resolve, reject) => {
@@ -56,7 +56,7 @@ module.exports = function (req, res) {
                             console.log("return reject(e1);")
                             reject(e1);
                         }
-                        if (r1.statusCode > 201) {
+                        if (r1 && r1.statusCode > 201) {
                             //upload error to Slack
                             console.log('upload error to Slack Error', payload.slug);
                             request({
@@ -89,7 +89,7 @@ module.exports = function (req, res) {
                                         console.log("return reject(e1);")
                                         return reject(e1);
                                     }
-                                    if (r1.statusCode > 202) {
+                                    if (r1 && r1.statusCode > 202) {
                                         //upload error to Slack
                                         console.log('Error', payload.slug);
                                         request({
@@ -141,7 +141,7 @@ module.exports = function (req, res) {
                     //console.log("Error", e)
                     return res.status(500).send({message: 'Error en catch 1', error: e});
                 })
-        } else if (r.statusCode === 200) {
+        } else if (r && r.statusCode === 200) {
             console.log("Resource already exists in Transifex");
             let promise = new Promise((resolve, reject) => {
                 transifexUtils.uploadTransifexResourceFile(
