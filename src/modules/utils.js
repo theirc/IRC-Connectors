@@ -9,6 +9,7 @@ function cleanUpHTML(h) {
         .replace(/(<link[^/>]*)>/gm, "$1 />")
         .replace(/(<hr.*)>/gm, "<div class=\"hr\">---</div>")
         .replace(/<div (.*)\/>/gm, "<div $1></div>")
+        .replace(/\"/gm, "'")
         .replace(/<u>(.*[\n\r\s\t]+.*)<\/u>/gmi, "$1");
 
     processedHtml = processedHtml
