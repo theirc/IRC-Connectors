@@ -3,13 +3,13 @@ const _ = require("lodash");
 function cleanUpHTML(h) {
     //console.log("cleanUpHTML-> original", h)
     let processedHtml = h
+        .replace(/\"/gm, "'")
         .replace(/(<img("[^"]*"|[^\/">])*)>/gi, '$1 />')
         .replace(/<meta (.*)[^\/]>/gi, '<meta $1 />')
         .replace(/(<br[^/>]*)>/gm, "$1 />")
         .replace(/(<link[^/>]*)>/gm, "$1 />")
-        .replace(/(<hr.*)>/gm, "<div class=\"hr\">---</div>")
+        .replace(/(<hr.*)>/gm, "<div class=\'hr\'>---</div>")
         .replace(/<div (.*)\/>/gm, "<div $1></div>")
-        .replace(/\"/gm, "'")
         .replace(/<u>(.*[\n\r\s\t]+.*)<\/u>/gmi, "$1");
 
     processedHtml = processedHtml

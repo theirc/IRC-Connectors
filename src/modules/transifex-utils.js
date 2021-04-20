@@ -97,7 +97,7 @@ function createTransifexResource(project, payload, callback) {
         if (error) {
             console.log(error);
             //throw new Error(error);
-        }else{
+        } else {
             //console.log(response.body);
         }
         callback(error, response)
@@ -106,7 +106,7 @@ function createTransifexResource(project, payload, callback) {
 
 
 
-function uploadTransifexResourceFile(project, slug, content, key=true) {
+function uploadTransifexResourceFile(project, slug, content, key = true) {
     if (project == null) {
         project = process.env.TRANSIFEX_PROJECT_SLUG
     }
@@ -122,8 +122,8 @@ function uploadTransifexResourceFile(project, slug, content, key=true) {
             JSON.stringify({
                 data: {
                     attributes: {
-                        content: key? '{"key": "' +content + '"}' : content,
-                        content_encoding: 'text'
+                        content: key ? '{ "key": "' + content + '" }' : content,
+                        content_encoding: "text"
                     },
                     relationships: {
                         resource: {
@@ -208,7 +208,7 @@ function getResourceTranslationHTML(project, key, l) {
         })
     };
     console.log("getResourceTranslationHTML -> options: " + JSON.stringify(options))
-    let timeout = process.env.TRANSIFEX_TRANSLATION_TIMEOUT_SECONDS?  
+    let timeout = process.env.TRANSIFEX_TRANSLATION_TIMEOUT_SECONDS ?
         process.env.TRANSIFEX_TRANSLATION_TIMEOUT_SECONDS * 1000
         : 30000 //Give 30 seconds to the async request by default
     return new Promise((resolve, reject) => {

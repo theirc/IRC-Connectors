@@ -82,8 +82,9 @@ module.exports = function (req, res) {
                             console.log("uploadTransifexResourceFile");
                             transifexUtils.uploadTransifexResourceFile(
                                 serviceProject,
-                                service.slug,
-                                transifexUtils.unicodeEscape(content),                            //project
+                                payload.slug,
+                                transifexUtils.unicodeEscape(content),   
+                                false,
                                 (e1, r1, b1) => {
                                     if (e1) {
                                         console.log("return reject(e1);")
