@@ -104,7 +104,7 @@ function createTransifexResource(project, payload, callback) {
     });
 }
 
-function uploadTransifexResourceFileTranslation(project, slug, content, key = true) {
+function uploadTransifexResourceFileTranslation(project, slug, content, lan, key = true) {
     if (project == null) {
         project = process.env.TRANSIFEX_PROJECT_SLUG
     }
@@ -127,7 +127,7 @@ function uploadTransifexResourceFileTranslation(project, slug, content, key = tr
                     relationships: {
                         language: {
                             data: {
-                                id: "l:en_US",
+                                id: "l:" + lan,
                                 type: "languages"
                             }
                         },
@@ -142,13 +142,12 @@ function uploadTransifexResourceFileTranslation(project, slug, content, key = tr
             })
 
     };
-    console.log("uploadTransifexResourceFile -> options: " + JSON.stringify(options))
+    console.log("uploadTransifexResourceFileTranslation -> options: " + JSON.stringify(options))
     request(options, function (error, response, body) {
         if (error) {
-            console.log(error);
-            //throw new Error(error);
+            console.log("uploadTransifexResourceFileTranslation -> Error: ", error);
         }
-        console.log("uploadTransifexResourceFile -> response: " + JSON.stringify(response));
+        console.log("uploadTransifexResourceFileTranslation -> response: " + JSON.stringify(response));
     });
 }
 

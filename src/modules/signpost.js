@@ -14,7 +14,7 @@ module.exports = function (req, res) {
         language
     } = req.body;
 
-    console.log('req.body', req.body);
+    console.log('signpost.js -> req.body', req.body);
 
     if (!service || !service.name || !service.slug) {
         console.log("Wrong Service data.");
@@ -145,24 +145,24 @@ module.exports = function (req, res) {
                 })
         } else if (r && r.statusCode === 200) {
             console.log("Resource already exists in Transifex");
-            if (service_i18ns) {
-                service_i18ns.forEach(s => {
-                    transifexUtils.uploadTransifexResourceFileTranslation(
-                        serviceProject,
-                        s.slug,
-                        transifexUtils.unicodeEscape(
-                            transifexUtils.generateContentForTransifex({
-                                content: s.description,
-                                title: s.name,
-                            })),
-                        (e1, r1) => {
-                            console.log("uploadTransifexResourceFileTranslation -> r1: ", r1)
-                            if (e1) {
-                                console.log("uploadTransifexResourceFileTranslation -> Error: ", e1)
-                            }
+            for (const s of service_i18ns) {
+                console.log("uploadTransifexResourceFileTranslation -> using: ", s);
+                transifexUtils.uploadTransifexResourceFileTranslation(
+                    serviceProject,
+                    s.slug,
+                    transifexUtils.unicodeEscape(
+                        transifexUtils.generateContentForTransifex({
+                            content: s.description,
+                            title: s.name,
+                        })),
+                    s.language,    
+                    (e1, r1) => {
+                        console.log("uploadTransifexResourceFileTranslation -> r1: ", r1)
+                        if (e1) {
+                            console.log("uploadTransifexResourceFileTranslation -> Error: ", e1)
                         }
-                    );
-                });
+                    }
+                );
             }
             let promise = new Promise((resolve, reject) => {
                 transifexUtils.uploadTransifexResourceFile(
