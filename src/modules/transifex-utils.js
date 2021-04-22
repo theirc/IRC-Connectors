@@ -104,7 +104,53 @@ function createTransifexResource(project, payload, callback) {
     });
 }
 
+function uploadTransifexResourceFileTranslation(project, slug, content, key = true) {
+    if (project == null) {
+        project = process.env.TRANSIFEX_PROJECT_SLUG
+    }
+    var options = {
+        method: 'POST',
+        url: `${process.env.TRANSIFEX_API_URL_v3}/resource_translations_async_uploads`,
+        headers: {
+            'Content-Type': 'application/vnd.api+json',
+            'Authorization': 'Bearer ' + process.env.TRANSIFEX_API_TOKEN
 
+        },
+        body:
+            JSON.stringify({
+                data: {
+                    attributes: {
+                        content: key ? '{ "key": "' + content + '" }' : content,
+                        content_encoding: "text",
+                        file_type: "default"
+                    },
+                    relationships: {
+                        language: {
+                            data: {
+                                id: "l:en_US",
+                                type: "languages"
+                            }
+                        },
+                        resource: {
+                            data: {
+                                id: "o:" + process.env.TRANSIFEX_ORGANIZATION_SLUG + ":p:" + project + ":r:" + slug,
+                                type: "resources"
+                            }
+                        }
+                    }, type: "resource_translations_async_uploads"
+                }
+            })
+
+    };
+    console.log("uploadTransifexResourceFile -> options: " + JSON.stringify(options))
+    request(options, function (error, response, body) {
+        if (error) {
+            console.log(error);
+            //throw new Error(error);
+        }
+        console.log("uploadTransifexResourceFile -> response: " + JSON.stringify(response));
+    });
+}
 
 function uploadTransifexResourceFile(project, slug, content, key = true) {
     if (project == null) {
@@ -290,6 +336,7 @@ function createArticleFileIdInCMS(slug, project, transifexFileId, callback) {
 
 module.exports = {
     generateContentForTransifex
+    , uploadTransifexResourceFileTranslation
     , unicodeEscape
     , getTransifexResourceBySlug
     , createTransifexResource

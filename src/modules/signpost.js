@@ -10,6 +10,7 @@ module.exports = function (req, res) {
     //Every time a Service is posted to this hook Create or update Transifex Resource
     const {
         service,
+        service_i18ns,
         language
     } = req.body;
 
@@ -34,7 +35,7 @@ module.exports = function (req, res) {
         categories: service.categories
     };
     let serviceProject;
-    if(service.transifexProject){
+    if (service.transifexProject) {
         console.log("service.transifexProject->" + service.transifexProject)
         serviceProject = service.transifexProject;
     } else {
@@ -83,7 +84,7 @@ module.exports = function (req, res) {
                             transifexUtils.uploadTransifexResourceFile(
                                 serviceProject,
                                 payload.slug,
-                                transifexUtils.unicodeEscape(content),   
+                                transifexUtils.unicodeEscape(content),
                                 false,
                                 (e1, r1, b1) => {
                                     if (e1) {
@@ -135,15 +136,34 @@ module.exports = function (req, res) {
             })
             promise
                 .then((r) => {
-                    console.log("{message: 'Created in Transifex', resourceId: "+ r.body.data.id +"}");
-                    return res.status(200).send({message: 'Created in Transifex', resourceId: r.body.data.id});
+                    console.log("{message: 'Created in Transifex', resourceId: " + r.body.data.id + "}");
+                    return res.status(200).send({ message: 'Created in Transifex', resourceId: r.body.data.id });
                 })
                 .catch(e => {
                     //console.log("Error", e)
-                    return res.status(500).send({message: 'Error en catch 1', error: e});
+                    return res.status(500).send({ message: 'Error en catch 1', error: e });
                 })
         } else if (r && r.statusCode === 200) {
             console.log("Resource already exists in Transifex");
+            if (service_i18ns) {
+                service_i18ns.forEach(s => {
+                    transifexUtils.uploadTransifexResourceFileTranslation(
+                        serviceProject,
+                        s.slug,
+                        transifexUtils.unicodeEscape(
+                            transifexUtils.generateContentForTransifex({
+                                content: s.description,
+                                title: s.name,
+                            })),
+                        (e1, r1) => {
+                            console.log("uploadTransifexResourceFileTranslation -> r1: ", r1)
+                            if (e1) {
+                                console.log("uploadTransifexResourceFileTranslation -> Error: ", e1)
+                            }
+                        }
+                    );
+                });
+            }
             let promise = new Promise((resolve, reject) => {
                 transifexUtils.uploadTransifexResourceFile(
                     serviceProject,
@@ -197,16 +217,16 @@ module.exports = function (req, res) {
             })
             promise
                 .then((r) => {
-                    console.log("{message: 'Created in Transifex', resourceId: "+ JSON.stringify(r) +"}");
-                    return res.status(200).send({message: 'Created in Transifex', resourceId: JSON.parse(r.body).data.id});
+                    console.log("{message: 'Created in Transifex', resourceId: " + JSON.stringify(r) + "}");
+                    return res.status(200).send({ message: 'Created in Transifex', resourceId: JSON.parse(r.body).data.id });
                 })
                 .catch(e => {
-                    console.log({message: 'Error en catch', error: e});
-                    return res.status(500).send({message: 'Error en catch 2', error: e});
+                    console.log({ message: 'Error en catch', error: e });
+                    return res.status(500).send({ message: 'Error en catch 2', error: e });
                 });
         } else {
             console.log("An error ocurred", __e, r)
-            return res.status(500).send({message: 'Error', error: __e, response: r});
+            return res.status(500).send({ message: 'Error', error: __e, response: r });
         }
     })
 };
