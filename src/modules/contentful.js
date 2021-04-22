@@ -45,9 +45,9 @@ function importArticleAndVideo(req, space) {
     let locale = contentfulPrimaryLanguage[spaceId] ?
         contenfulLanguageDictionary[contentfulPrimaryLanguage[spaceId]] : "en";
     let project = transifexToSpaceDictionary[spaceId];
-    
+
     // Each country has now a separated project:
-    let countryProject = contenfulCountryToTransifexProject[countryId] ? 
+    let countryProject = contenfulCountryToTransifexProject[countryId] ?
         contenfulCountryToTransifexProject[countryId] : project
     countryProject = project; //UNCOMMENT THIS WHEN READY TO PROD.
 
@@ -149,7 +149,7 @@ function importArticleAndVideo(req, space) {
                                             console.log('Hooked')
                                         })
                                         reject(e);
-                                        return ;
+                                        return;
                                     }
                                     else {
                                         request({
@@ -294,10 +294,10 @@ function uploadCategoriesToTransifex(client, spaceId) {
     let project = transifexToSpaceDictionary[spaceId];
 
     // Each country has now a separated project:
-    let countryProject = contenfulCountryToTransifexProject[countryId] ? 
+    let countryProject = contenfulCountryToTransifexProject[countryId] ?
         contenfulCountryToTransifexProject[countryId] : project
     countryProject = project; //UNCOMMENT THIS WHEN READY TO PROD.
-    
+
     client.getEntries({
         limit: 1e3,
         content_type: "category",
