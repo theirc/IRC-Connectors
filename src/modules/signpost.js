@@ -145,25 +145,26 @@ module.exports = function (req, res) {
                 })
         } else if (r && r.statusCode === 200) {
             console.log("Resource already exists in Transifex");
-            for (const s of service_i18ns) {
-                console.log("uploadTransifexResourceFileTranslation -> using: ", s);
-                transifexUtils.uploadTransifexResourceFileTranslation(
-                    serviceProject,
-                    s.slug,
-                    transifexUtils.unicodeEscape(
-                        transifexUtils.generateContentForTransifex({
-                            content: s.description,
-                            title: s.name,
-                        })),
-                    s.language,    
-                    (e1, r1) => {
-                        console.log("uploadTransifexResourceFileTranslation -> r1: ", r1)
-                        if (e1) {
-                            console.log("uploadTransifexResourceFileTranslation -> Error: ", e1)
+            if (service_i18ns && process.env.TRANSIFEX_UPLOAD_TRANSLATIONS)
+                for (const s of service_i18ns) {
+                    console.log("uploadTransifexResourceFileTranslation -> using: ", s);
+                    transifexUtils.uploadTransifexResourceFileTranslation(
+                        serviceProject,
+                        s.slug,
+                        transifexUtils.unicodeEscape(
+                            transifexUtils.generateContentForTransifex({
+                                content: s.description,
+                                title: s.name,
+                            })),
+                        s.language,
+                        (e1, r1) => {
+                            console.log("uploadTransifexResourceFileTranslation -> r1: ", r1)
+                            if (e1) {
+                                console.log("uploadTransifexResourceFileTranslation -> Error: ", e1)
+                            }
                         }
-                    }
-                );
-            }
+                    );
+                }
             let promise = new Promise((resolve, reject) => {
                 transifexUtils.uploadTransifexResourceFile(
                     serviceProject,
