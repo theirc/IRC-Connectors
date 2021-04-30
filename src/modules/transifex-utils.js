@@ -32,7 +32,7 @@ function generateContentForTransifex(article) {
 }
 
 function unicodeEscape(str) {
-    let ret = str.replace(/[\s\S]\"/g, function (character) {
+    let ret = str.replace(/[\s\S]-·\"/g, function (character) {
         var escape = character.charCodeAt().toString(16),
             longhand = escape.length > 2;
         if (!longhand) {
