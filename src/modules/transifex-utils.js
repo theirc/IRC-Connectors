@@ -40,8 +40,8 @@ function unicodeEscape(str) {
         }
         return '&#' + ('x') + ('0000' + escape).slice(longhand ? -4 : -2) + ';';
     });
-    console.log("unicodeEscape-> ret", ret);
-    return ret;
+    //console.log("unicodeEscape-> ret", ret);
+    return ret.replace(/<S>/g, "<s>").replace(/<\/S>/g, "</s>")
 }
 
 function getTransifexResourceBySlug(project, slug, callback) {
