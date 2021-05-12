@@ -32,7 +32,7 @@ function generateContentForTransifex(article) {
 }
 
 function unicodeEscape(str) {
-    let ret = str.replace(/[\s\S]-·\"/g, function (character) {
+    let ret = str.replace(/[\s\S]-·\"*/g, function (character) {
         var escape = character.charCodeAt().toString(16),
             longhand = escape.length > 2;
         if (!longhand) {
@@ -40,8 +40,9 @@ function unicodeEscape(str) {
         }
         return '&#' + ('x') + ('0000' + escape).slice(longhand ? -4 : -2) + ';';
     });
-    //console.log("unicodeEscape-> ret", ret);
-    return ret.replace(/<S>/g, "<s>").replace(/<\/S>/g, "</s>")
+    ret = ret.replace(/<S>/g, "<s>").replace(/<\/S>/g, "</s>")
+    console.log("unicodeEscape->", ret);
+    return ret;
 }
 
 function getTransifexResourceBySlug(project, slug, callback) {
