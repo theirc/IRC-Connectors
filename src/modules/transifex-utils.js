@@ -23,9 +23,9 @@ function generateContentForTransifex(article) {
         _article = article.fields
     else
         _article = article
-    title = _article.title ? _article.title : ''
-    lead = _article.lead ? cleanUpHTML(md.render(_article.lead)) : '';
-    content = _article.content ? cleanUpHTML(md.render(_article.content)) : '';
+    title = _article && article.title ? _article.title : ''
+    lead = _article && _article.lead ? cleanUpHTML(md.render(_article.lead)) : '';
+    content = _article && _article.content ? cleanUpHTML(md.render(_article.content)) : '';
     let body = `<html><body><div class='title'>${title}</div><div class='subtitle'>${lead}</div>${content}</body></html>`;
     console.log("generateContentForTransifex-> body: ", body)
     return body;
