@@ -30,6 +30,12 @@ const client = contentfulManagement.createClient({
 function transformIncomingText(content) {
     content = content.replace("{\"key\": \"", "").replace("\"}", "")
     console.log("transformIncomingText -> original: " + content)
+
+    if (content.indexOf("\"status\":\"failed\"")) {
+        console.log('Error ocurred');
+        return null;
+    }
+
     // Closing self closing tags
     //
     let processedHtml = cleanUpHTML(content);
@@ -186,9 +192,10 @@ module.exports = function (req, res) {
                                 payload.content += '<p>' + t.data[i].attributes.strings.other + '</p>';
                         };*/
                         let contentType = "article";
-                        updateContentful(spaceId, slug, language, payload, contentType).then(p => {
+                        if (payload)
+                            updateContentful(spaceId, slug, language, payload, contentType).then(p => {
 
-                        });
+                            });
                     }
                 })
             }
@@ -233,8 +240,8 @@ function updateServiceInCMS(resource, language, translation, callback) {
     if (description == "") {
         //Update for services that are not coming in the correct format for Title & Subtitle:
         let html = translation.data[0].attributes.strings.other.split("<div class='subtitle'></div>");
-        name = html[0].replace("<div class='title'>","").replace("</div>","").replace("<body>","").replace("<html>","");
-        description = html[1].replace("</body>","").replace("</html>","");;
+        name = html[0].replace("<div class='title'>", "").replace("</div>", "").replace("<body>", "").replace("<html>", "");
+        description = html[1].replace("</body>", "").replace("</html>", "");;
     }
     let uri = `${process.env.SIGNPOST_API_URL}/services/translations`;
     let requestData = {
