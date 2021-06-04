@@ -31,9 +31,9 @@ function transformIncomingText(content) {
     content = content.replace("{\"key\": \"", "").replace("\"}", "")
     console.log("transformIncomingText -> original: " + content)
 
-    if (content.indexOf("\"status\":\"failed\"")) {
+    if (content.indexOf("\"status\":\"failed\"" > 0)) {
         console.log('Error ocurred');
-        return null;
+        //return null;
     }
 
     // Closing self closing tags
