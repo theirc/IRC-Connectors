@@ -45,9 +45,9 @@ function importArticleAndVideo(req, space) {
     let locale = contentfulPrimaryLanguage[spaceId] ?
         contenfulLanguageDictionary[contentfulPrimaryLanguage[spaceId]] : "en";
     let project = transifexToSpaceDictionary[spaceId];
-    
+
     // Each country has now a separated project:
-    let countryProject = contenfulCountryToTransifexProject[countryId] ? 
+    let countryProject = contenfulCountryToTransifexProject[countryId] ?
         contenfulCountryToTransifexProject[countryId] : project
     countryProject = project; //UNCOMMENT THIS WHEN READY TO PROD.
 
@@ -124,7 +124,7 @@ function importArticleAndVideo(req, space) {
                                 return;
                             }
                             else {
-                                transifexUtils.uploadTransifexResourceFile(countryProject, slug, _content, (e1, r1, b1) => {
+                                transifexUtils.uploadTransifexResourceFile(countryProject, slug, _content, false, (e1, r1, b1) => {
                                     if (e1) {
                                         reject(e1);
                                     }
@@ -173,7 +173,7 @@ function importArticleAndVideo(req, space) {
                         }
                     );
                 } else {
-                    transifexUtils.uploadTransifexResourceFile(countryProject, slug, _content, (e1, r1, b1) => {
+                    transifexUtils.uploadTransifexResourceFile(countryProject, slug, _content, false, (e1, r1, b1) => {
                         if (e1) {
                             reject(e1);
                         }
@@ -294,10 +294,10 @@ function uploadCategoriesToTransifex(client, spaceId) {
     let project = transifexToSpaceDictionary[spaceId];
 
     // Each country has now a separated project:
-    let countryProject = contenfulCountryToTransifexProject[countryId] ? 
+    let countryProject = contenfulCountryToTransifexProject[countryId] ?
         contenfulCountryToTransifexProject[countryId] : project
     countryProject = project; //UNCOMMENT THIS WHEN READY TO PROD.
-    
+
     client.getEntries({
         limit: 1e3,
         content_type: "category",
@@ -330,7 +330,7 @@ function uploadCategoriesToTransifex(client, spaceId) {
                     if (e) {
                         console.log("createTransifexResource Error: " + e);
                     }
-                    transifexUtils.uploadTransifexResourceFile(countryProject, slug, content, (e, r) => {
+                    transifexUtils.uploadTransifexResourceFile(countryProject, slug, content, false, (e, r) => {
                         if (e) {
                             console.log("createTransifexResource Error: " + e);
                         }
@@ -339,7 +339,7 @@ function uploadCategoriesToTransifex(client, spaceId) {
                 })
             } else {
                 //Si existe subirle el Resource file
-                transifexUtils.uploadTransifexResourceFile(countryProject, slug, content, (e, r) => {
+                transifexUtils.uploadTransifexResourceFile(countryProject, slug, content, false, (e, r) => {
                     if (e) {
                         console.log("createTransifexResource Error: " + e);
                     }

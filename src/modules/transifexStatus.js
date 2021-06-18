@@ -3,7 +3,7 @@ const request = require("request");
 
 const transifexUtils = require('./transifex-utils');
 
-const project = process.env.TRANSIFEX_PROJECT_SLUG_SERVICES;
+let  project = process.env.TRANSIFEX_PROJECT_SLUG_SERVICES;
 
 
 module.exports = function (req, res) {
@@ -18,6 +18,9 @@ module.exports = function (req, res) {
     if (!service || !service.slug) {
         console.log("Wrong Service data.");
         return res.status(400).send("Wrong Service data.");
+    }
+    if(service.project){
+        project = service.project
     }
     //Checking status of translation
     console.log("Checking status of translation");

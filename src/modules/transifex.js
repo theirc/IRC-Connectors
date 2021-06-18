@@ -28,8 +28,13 @@ const client = contentfulManagement.createClient({
 });
 
 function transformIncomingText(content) {
-    content = content.replace("{\"key\": \"","").replace("\"}","")
+    content = content.replace("{\"key\": \"", "").replace("\"}", "")
     console.log("transformIncomingText -> original: " + content)
+    if (content.indexOf("\"status\":\"failed\"") > 0 || content.indexOf("\'status\':\'failed\'") > 0) {
+        console.log('Error ocurred');
+        return null;
+    }
+
     // Closing self closing tags
     //
     let processedHtml = cleanUpHTML(content);
@@ -76,7 +81,7 @@ function updateContentful(spaceId, slug, language, payload, contentType) {
             if (entry) {
                 const contentfulLanguage = contenfulLanguageDictionary[language] || language;
 
-                console.log("Contentful Payload ->"+JSON.stringify(payload, null, 4));
+                console.log("Contentful Payload ->" + JSON.stringify(payload, null, 4));
                 Object.keys(payload).forEach(k => {
                     let field = entry.fields[k] || {
                         [contentfulLanguage]: ""
@@ -186,9 +191,10 @@ module.exports = function (req, res) {
                                 payload.content += '<p>' + t.data[i].attributes.strings.other + '</p>';
                         };*/
                         let contentType = "article";
-                        updateContentful(spaceId, slug, language, payload, contentType).then(p => {
+                        if (payload)
+                            updateContentful(spaceId, slug, language, payload, contentType).then(p => {
 
-                        });
+                            });
                     }
                 })
             }
@@ -207,13 +213,14 @@ module.exports = function (req, res) {
                             updateServiceCategoryInCMS(resource, language, t, (e, r, b) => { });
                             break;
                         case signpostEntityPrefixes.providerCategories:
-                            updateProviderCategoryInCMS(resource, language, t, (e, r, b) => {  });
+                            updateProviderCategoryInCMS(resource, language, t, (e, r, b) => { });
                             break;
                         default:
                             console.log("entityPrefix: " + entityPrefix + " not matching any defined prefixes: " + JSON.stringify(signpostEntityPrefixes))
                             //OLD CMS translations fix:
-                            if(project === "refugeeinfo-services"){
-                                updateServiceInCMS(resource, language, t, (e, r, b) => { })                            }
+                            if (project === "refugeeinfo-services") {
+                                updateServiceInCMS(resource, language, t, (e, r, b) => { })
+                            }
                             break;
                     }
 
@@ -225,10 +232,16 @@ module.exports = function (req, res) {
 
 function updateServiceInCMS(resource, language, translation, callback) {
     console.log("translation: " + JSON.stringify(translation))
-    let description = "", i = 1;
+    let description = "", i = 1, name = translation.data[0].attributes.strings.other;
     for (i = 1; i < translation.data.length; i++) {
-        description += '<p>' + translation.data[i].attributes.strings.other + '</p>'
+        description += '<p>' + translation.data[i].attributes.strings.other.replace("\"}", "") + '</p>'
     };
+    if (description == "") {
+        //Update for services that are not coming in the correct format for Title & Subtitle:
+        let html = translation.data[0].attributes.strings.other.split("<div class='subtitle'></div>");
+        name = html[0].replace("<div class='title'>", "").replace("</div>", "").replace("<body>", "").replace("<html>", "");
+        description = html[1].replace("</body>", "").replace("</html>", "");;
+    }
     let uri = `${process.env.SIGNPOST_API_URL}/services/translations`;
     let requestData = {
         method: 'POST',
@@ -240,7 +253,7 @@ function updateServiceInCMS(resource, language, translation, callback) {
         body: {
             slug: resource,
             language: language,
-            name: translation.data[0].attributes.strings.other,
+            name: name,
             description: description
         }
     };

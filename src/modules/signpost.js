@@ -10,10 +10,11 @@ module.exports = function (req, res) {
     //Every time a Service is posted to this hook Create or update Transifex Resource
     const {
         service,
+        service_i18ns,
         language
     } = req.body;
 
-    console.log('req.body', req.body);
+    console.log('signpost.js -> req.body', req.body);
 
     if (!service || !service.name || !service.slug) {
         console.log("Wrong Service data.");
@@ -33,24 +34,30 @@ module.exports = function (req, res) {
         accept_translations: true,
         categories: service.categories
     };
-
+    let serviceProject;
+    if (service.transifexProject) {
+        console.log("service.transifexProject->" + service.transifexProject)
+        serviceProject = service.transifexProject;
+    } else {
+        serviceProject = project;
+    }
     //Checking if resource is already created
     console.log("Checking if resource is already created");
-    transifexUtils.getTransifexResourceBySlug(project, payload.slug, (__e, r, __b) => {
+    transifexUtils.getTransifexResourceBySlug(serviceProject, payload.slug, (__e, r, __b) => {
         //if article doesn't exists, create it, else update it:
-        if (r.statusCode === 404) {
+        if (r && r.statusCode === 404) {
             //if article doesn't exists, create it, else update it:
             console.log("createTransifexResource");
             let promise = new Promise((resolve, reject) => {
                 transifexUtils.createTransifexResource(
-                    project,                                //project
+                    serviceProject,                                //project
                     payload,                                //payload
                     (e1, r1, b1) => {
                         if (e1) {
                             console.log("return reject(e1);")
                             reject(e1);
                         }
-                        if (r1.statusCode > 201) {
+                        if (r1 && r1.statusCode > 201) {
                             //upload error to Slack
                             console.log('upload error to Slack Error', payload.slug);
                             request({
@@ -75,15 +82,16 @@ module.exports = function (req, res) {
                         else {
                             console.log("uploadTransifexResourceFile");
                             transifexUtils.uploadTransifexResourceFile(
-                                project,
-                                service.slug,
-                                transifexUtils.unicodeEscape(content),                            //project
+                                serviceProject,
+                                payload.slug,
+                                transifexUtils.unicodeEscape(content),
+                                false,
                                 (e1, r1, b1) => {
                                     if (e1) {
                                         console.log("return reject(e1);")
                                         return reject(e1);
                                     }
-                                    if (r1.statusCode > 202) {
+                                    if (r1 && r1.statusCode > 202) {
                                         //upload error to Slack
                                         console.log('Error', payload.slug);
                                         request({
@@ -128,18 +136,39 @@ module.exports = function (req, res) {
             })
             promise
                 .then((r) => {
-                    console.log("{message: 'Created in Transifex', resourceId: "+ r.body.data.id +"}");
-                    return res.status(200).send({message: 'Created in Transifex', resourceId: r.body.data.id});
+                    console.log("{message: 'Created in Transifex', resourceId: " + r.body.data.id + "}");
+                    return res.status(200).send({ message: 'Created in Transifex', resourceId: r.body.data.id });
                 })
                 .catch(e => {
                     //console.log("Error", e)
-                    return res.status(500).send({message: 'Error en catch 1', error: e});
+                    return res.status(500).send({ message: 'Error en catch 1', error: e });
                 })
-        } else if (r.statusCode === 200) {
+        } else if (r && r.statusCode === 200) {
             console.log("Resource already exists in Transifex");
+            if (process.env.TRANSIFEX_UPLOAD_TRANSLATIONS == 1 && service_i18ns) {
+                for (const s of service_i18ns) {
+                    console.log("uploadTransifexResourceFileTranslation -> using: ", s);
+                    transifexUtils.uploadTransifexResourceFileTranslation(
+                        serviceProject,
+                        s.slug,
+                        transifexUtils.unicodeEscape(
+                            transifexUtils.generateContentForTransifex({
+                                content: s.description,
+                                title: s.name,
+                            })),
+                        s.language,
+                        (e1, r1) => {
+                            console.log("uploadTransifexResourceFileTranslation -> r1: ", r1)
+                            if (e1) {
+                                console.log("uploadTransifexResourceFileTranslation -> Error: ", e1)
+                            }
+                        }
+                    );
+                }
+            }
             let promise = new Promise((resolve, reject) => {
                 transifexUtils.uploadTransifexResourceFile(
-                    project,
+                    serviceProject,
                     service.slug,
                     transifexUtils.unicodeEscape(content),                            //project
                     (e1, r1) => {
@@ -190,16 +219,16 @@ module.exports = function (req, res) {
             })
             promise
                 .then((r) => {
-                    console.log("{message: 'Created in Transifex', resourceId: "+ JSON.stringify(r) +"}");
-                    return res.status(200).send({message: 'Created in Transifex', resourceId: JSON.parse(r.body).data.id});
+                    console.log("{message: 'Created in Transifex', resourceId: " + JSON.stringify(r) + "}");
+                    return res.status(200).send({ message: 'Created in Transifex', resourceId: JSON.parse(r.body).data.id });
                 })
                 .catch(e => {
-                    console.log({message: 'Error en catch', error: e});
-                    return res.status(500).send({message: 'Error en catch 2', error: e});
+                    console.log({ message: 'Error en catch', error: e });
+                    return res.status(500).send({ message: 'Error en catch 2', error: e });
                 });
         } else {
             console.log("An error ocurred", __e, r)
-            return res.status(500).send({message: 'Error', error: __e, response: r});
+            return res.status(500).send({ message: 'Error', error: __e, response: r });
         }
     })
 };

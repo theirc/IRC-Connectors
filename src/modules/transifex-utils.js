@@ -23,16 +23,16 @@ function generateContentForTransifex(article) {
         _article = article.fields
     else
         _article = article
-    title = _article.title ? _article.title : ''
-    lead = _article.lead ? cleanUpHTML(md.render(_article.lead)) : '';
-    content = _article.content ? cleanUpHTML(md.render(_article.content)) : '';
+    title = _article && article.title ? _article.title : ''
+    lead = _article && _article.lead ? cleanUpHTML(md.render(_article.lead)) : '';
+    content = _article && _article.content ? cleanUpHTML(md.render(_article.content)) : '';
     let body = `<html><body><div class='title'>${title}</div><div class='subtitle'>${lead}</div>${content}</body></html>`;
     console.log("generateContentForTransifex-> body: ", body)
     return body;
 }
 
 function unicodeEscape(str) {
-    let ret = str.replace(/[\s\S]\"/g, function (character) {
+    let ret = str.replace(/[\s\S]-·\"*/g, function (character) {
         var escape = character.charCodeAt().toString(16),
             longhand = escape.length > 2;
         if (!longhand) {
@@ -40,7 +40,8 @@ function unicodeEscape(str) {
         }
         return '&#' + ('x') + ('0000' + escape).slice(longhand ? -4 : -2) + ';';
     });
-    console.log("unicodeEscape-> ret", ret);
+    ret = ret.replace(/<S>/g, "<s>").replace(/<\/S>/g, "</s>")
+    console.log("unicodeEscape->", ret);
     return ret;
 }
 
@@ -53,13 +54,13 @@ function getTransifexResourceBySlug(project, slug, callback) {
             'Cookie': 'AWSALB=pF31Pi+kG1MKxAfaW9mjX71drgBzk5is4w/4rSPeMYnl4Cd7eC0Dm3w6PiFXMYVdFEVb+6UAZYpA1mZmoCj730fGjAsGGWM94ngp1xROolV3oVUPBTaNU46EYy9A; AWSALBCORS=pF31Pi+kG1MKxAfaW9mjX71drgBzk5is4w/4rSPeMYnl4Cd7eC0Dm3w6PiFXMYVdFEVb+6UAZYpA1mZmoCj730fGjAsGGWM94ngp1xROolV3oVUPBTaNU46EYy9A'
         }
     };
-    console.log("options", options);
+    console.log("getTransifexResourceBySlug -> options", options);
     request(options, function (error, response, body) {
         if (error) {
-            console.log(error);
+            console.log("getTransifexResourceBySlug -> error: " + error);
             //throw new Error(error);
         }
-        //console.log(response.body);
+        console.log("getTransifexResourceBySlug -> response: " + JSON.stringify(response));
         callback(error, response, body)
     });
 }
@@ -97,15 +98,61 @@ function createTransifexResource(project, payload, callback) {
         if (error) {
             console.log(error);
             //throw new Error(error);
+        } else {
+            //console.log(response.body);
         }
-        console.log(response.body);
         callback(error, response)
     });
 }
 
+function uploadTransifexResourceFileTranslation(project, slug, content, lan, key = true) {
+    if (project == null) {
+        project = process.env.TRANSIFEX_PROJECT_SLUG
+    }
+    var options = {
+        method: 'POST',
+        url: `${process.env.TRANSIFEX_API_URL_v3}/resource_translations_async_uploads`,
+        headers: {
+            'Content-Type': 'application/vnd.api+json',
+            'Authorization': 'Bearer ' + process.env.TRANSIFEX_API_TOKEN
 
+        },
+        body:
+            JSON.stringify({
+                data: {
+                    attributes: {
+                        content: key ? '{ "key": "' + content + '" }' : content,
+                        content_encoding: "text",
+                        file_type: "default"
+                    },
+                    relationships: {
+                        language: {
+                            data: {
+                                id: "l:" + lan,
+                                type: "languages"
+                            }
+                        },
+                        resource: {
+                            data: {
+                                id: "o:" + process.env.TRANSIFEX_ORGANIZATION_SLUG + ":p:" + project + ":r:" + slug,
+                                type: "resources"
+                            }
+                        }
+                    }, type: "resource_translations_async_uploads"
+                }
+            })
 
-function uploadTransifexResourceFile(project, slug, content, callback) {
+    };
+    console.log("uploadTransifexResourceFileTranslation -> options: " + JSON.stringify(options))
+    request(options, function (error, response, body) {
+        if (error) {
+            console.log("uploadTransifexResourceFileTranslation -> Error: ", error);
+        }
+        console.log("uploadTransifexResourceFileTranslation -> response: " + JSON.stringify(response));
+    });
+}
+
+function uploadTransifexResourceFile(project, slug, content, key = true) {
     if (project == null) {
         project = process.env.TRANSIFEX_PROJECT_SLUG
     }
@@ -121,8 +168,8 @@ function uploadTransifexResourceFile(project, slug, content, callback) {
             JSON.stringify({
                 data: {
                     attributes: {
-                        content: "{\"key\": \"" +content + "\"}",
-                        content_encoding: 'text'
+                        content: key ? '{ "key": "' + content + '" }' : content,
+                        content_encoding: "text"
                     },
                     relationships: {
                         resource: {
@@ -142,7 +189,7 @@ function uploadTransifexResourceFile(project, slug, content, callback) {
             console.log(error);
             //throw new Error(error);
         }
-        console.log("uploadTransifexResourceFile -> response: " + response.body);
+        console.log("uploadTransifexResourceFile -> response: " + JSON.stringify(response));
     });
 }
 
@@ -207,7 +254,7 @@ function getResourceTranslationHTML(project, key, l) {
         })
     };
     console.log("getResourceTranslationHTML -> options: " + JSON.stringify(options))
-    let timeout = process.env.TRANSIFEX_TRANSLATION_TIMEOUT_SECONDS?  
+    let timeout = process.env.TRANSIFEX_TRANSLATION_TIMEOUT_SECONDS ?
         process.env.TRANSIFEX_TRANSLATION_TIMEOUT_SECONDS * 1000
         : 30000 //Give 30 seconds to the async request by default
     return new Promise((resolve, reject) => {
@@ -289,6 +336,7 @@ function createArticleFileIdInCMS(slug, project, transifexFileId, callback) {
 
 module.exports = {
     generateContentForTransifex
+    , uploadTransifexResourceFileTranslation
     , unicodeEscape
     , getTransifexResourceBySlug
     , createTransifexResource
