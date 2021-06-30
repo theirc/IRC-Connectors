@@ -145,6 +145,7 @@ module.exports = function (req, res) {
                 })
         } else if (r && r.statusCode === 200) {
             console.log("Resource already exists in Transifex");
+            //Upload translations too, if it's configured:
             if (process.env.TRANSIFEX_UPLOAD_TRANSLATIONS == 1 && service_i18ns) {
                 for (const s of service_i18ns) {
                     console.log("uploadTransifexResourceFileTranslation -> using: ", s);
@@ -166,11 +167,13 @@ module.exports = function (req, res) {
                     );
                 }
             }
+            //Upload resource:
             let promise = new Promise((resolve, reject) => {
                 transifexUtils.uploadTransifexResourceFile(
                     serviceProject,
                     service.slug,
-                    transifexUtils.unicodeEscape(content),                            //project
+                    transifexUtils.unicodeEscape(content), 
+                    false,                            //project
                     (e1, r1) => {
                         console.log("r1: " + JSON.stringify(r1))
                         if (e1) {
