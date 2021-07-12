@@ -30,7 +30,7 @@ module.exports = function (req, res) {
     let payload = {
         slug: service.slug,
         name: service.name,
-        i18n_type: "HTML",
+        //i18n_type: "HTML",
         accept_translations: true,
         categories: service.categories
     };
@@ -50,8 +50,8 @@ module.exports = function (req, res) {
             console.log("createTransifexResource");
             let promise = new Promise((resolve, reject) => {
                 transifexUtils.createTransifexResource(
-                    serviceProject,                                //project
-                    payload,                                //payload
+                    serviceProject,                                 //project
+                    payload,                                        //payload
                     (e1, r1, b1) => {
                         if (e1) {
                             console.log("return reject(e1);")

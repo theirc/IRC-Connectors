@@ -87,7 +87,13 @@ function createTransifexResource(project, payload, callback) {
                                 id: "o:" + process.env.TRANSIFEX_ORGANIZATION_SLUG + ":p:" + project,
                                 type: "projects"
                             }
-                        }
+                        },
+                        i18n_format: {
+                            data: {
+                            type: "i18n_formats",
+                            id: "HTML"
+                            }
+                        },
                     }, type: "resources"
                 }
             })
@@ -99,7 +105,7 @@ function createTransifexResource(project, payload, callback) {
             console.log(error);
             //throw new Error(error);
         } else {
-            //console.log(response.body);
+            console.log(response.body);
         }
         callback(error, response)
     });
