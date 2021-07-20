@@ -79,7 +79,7 @@ function importArticleAndVideo(req, space) {
         let payload = {
             slug,
             name: title,
-            i18n_type: "HTML",
+            //i18n_type: "HTML",
             accept_translations: true
         };
         if (item.fields.country && item.fields.country.fields && item.fields.country.fields.slug) {
