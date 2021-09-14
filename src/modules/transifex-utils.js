@@ -41,7 +41,7 @@ function unicodeEscape(str) {
         return '&#' + ('x') + ('0000' + escape).slice(longhand ? -4 : -2) + ';';
     });
     ret = ret.replace(/<S>/g, "<s>").replace(/<\/S>/g, "</s>")
-    console.log("unicodeEscape->", ret);
+    //console.log("unicodeEscape->", ret);
     return ret;
 }
 
